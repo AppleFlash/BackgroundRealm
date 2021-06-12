@@ -10,43 +10,6 @@ import XCTest
 import RealmSwift
 import Combine
 
-// MARK: - Objects
-
-
-private struct PrimaryKeyUser: Equatable {
-    let id: String
-    var name: String
-    let age: Int
-}
-
-final class RealmPrimaryKeyUser: Object {
-    @objc dynamic var id: String = ""
-    @objc dynamic var name: String = ""
-    @objc dynamic var age: Int = 0
-    
-    override class func primaryKey() -> String? {
-        return #keyPath(id)
-    }
-}
-
-// MARK: - Mappers
-
-private struct DonainRealmPrimaryMapper: ObjectToPersistenceMapper {
-    func convert(model: PrimaryKeyUser) -> RealmPrimaryKeyUser {
-        let user = RealmPrimaryKeyUser()
-        user.id = model.id
-        user.age = model.age
-        user.name = model.name
-        
-        return user
-    }
-}
-
-private struct RealmDomainPrimaryMapper: PersistenceToDomainMapper {
-    func convert(persistence: RealmPrimaryKeyUser) -> PrimaryKeyUser {
-        return PrimaryKeyUser(id: persistence.id, name: persistence.name, age: persistence.age)
-    }
-}
 
 // MARK: - Test
 
@@ -58,7 +21,7 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         super.setUp()
         
         let queue = DispatchQueue(label: "com.test.persistence")
-        let config = Realm.Configuration(inMemoryIdentifier: "in memory test realm")
+        let config = Realm.Configuration(inMemoryIdentifier: "in memory primary test realm")
         persistence = PersistenceGateway(queue: queue, configuration: config)
     }
     
@@ -226,152 +189,6 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         // then
         waitForExpectations(timeout: 2)
         XCTAssertEqual(users, savedUsers)
-    }
-    
-    // MARK: Listen
-    
-    func test_listenSinglePrimaryObject_success() {
-        // given
-        let user = PrimaryKeyUser(id: "id1", name: UUID().uuidString, age: .random(in: 10...99))
-        let expectedChangedAges = [20, 30]
-        var changedAges: [Int] = []
-        let expect = expectation(description: "save")
-        persistence
-            .listen(mapper: RealmDomainPrimaryMapper()) { results in
-                results.filter("id = %@", user.id)
-            }
-            .print()
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { user in
-                    changedAges.append(user.age)
-                    if changedAges.count == expectedChangedAges.count {
-                        expect.fulfill()
-                    }
-                }
-            )
-            .store(in: &subscriptions)
-
-        // when
-        persistence.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 20), mapper: DonainRealmPrimaryMapper())
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 30), mapper: DonainRealmPrimaryMapper())
-            }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-            .store(in: &subscriptions)
-
-        // then
-        waitForExpectations(timeout: 2)
-        XCTAssertEqual(changedAges, expectedChangedAges)
-    }
-    
-    func test_listenArrayOfPrimaryObject_validInsert_success() {
-        // given
-        let oldUser = createUser(age: 2)
-        let newUser = createUser(age: 3)
-        let users = [createUser(age: 1), createUser(age: 1), oldUser]
-        let expectedUsers = [[oldUser], [oldUser, newUser]]
-        var receivedUsers: [[PrimaryKeyUser]] = []
-        let expect = expectation(description: "save")
-        
-        persistence!.listenArray(mapper: RealmDomainPrimaryMapper()) { $0.filter("age > %@", 1) }
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { users in
-                    if !users.isEmpty {
-                        receivedUsers.append(users)
-                    }
-                    if receivedUsers.count == expectedUsers.count {
-                        expect.fulfill()
-                    }
-                }
-            )
-            .store(in: &subscriptions)
-        
-        // when
-        persistence.save(objects: users, mapper: DonainRealmPrimaryMapper())
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.save(object: newUser, mapper: DonainRealmPrimaryMapper())
-            }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-            .store(in: &subscriptions)
-
-        // then
-        waitForExpectations(timeout: 2)
-        XCTAssertEqual(receivedUsers, expectedUsers)
-    }
-    
-    func test_listenArrayOfPrimaryObject_validDelete_success() {
-        // given
-        let users = [createUser(), createUser()]
-        let expectedUsers = Array(users.dropLast())
-        var receivedUsers: [PrimaryKeyUser] = []
-        let expect = expectation(description: "save")
-        
-        persistence!.listenArray(mapper: RealmDomainPrimaryMapper()) { $0 }
-            .dropFirst(2)
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { users in
-                    receivedUsers = users
-                    expect.fulfill()
-                }
-            )
-            .store(in: &subscriptions)
-        
-        // when
-        persistence.save(objects: users, mapper: DonainRealmPrimaryMapper())
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.delete(DonainRealmPrimaryMapper.self) { $0.filter("id = %@", users.last!.id) }
-            }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-            .store(in: &subscriptions)
-
-        // then
-        waitForExpectations(timeout: 2)
-        XCTAssertEqual(receivedUsers, expectedUsers)
-    }
-    
-    func test_listenArrayOfPrimaryObject_validUpdate_success() {
-        // given
-        let firstUser = createUser()
-        let secondUser = createUser(name: "zzz")
-        var updatedUser = firstUser
-        updatedUser.name = "updated user"
-        let users = [firstUser, secondUser]
-        let expectedUsers = [updatedUser, secondUser]
-        var receivedUsers: [PrimaryKeyUser] = []
-        let expect = expectation(description: "save")
-        
-        persistence.save(objects: users, mapper: DonainRealmPrimaryMapper())
-            .flatMap { [persistence] in
-                persistence!.listenArray(mapper: RealmDomainPrimaryMapper()) { $0 }
-            }
-            .dropFirst()
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { users in
-                    receivedUsers = users
-                    expect.fulfill()
-                }
-            )
-            .store(in: &subscriptions)
-        
-        // when
-        Just(())
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.save(object: updatedUser, mapper: DonainRealmPrimaryMapper())
-            }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-            .store(in: &subscriptions)
-
-        // then
-        waitForExpectations(timeout: 30)
-        XCTAssertEqual(receivedUsers, expectedUsers)
     }
     
     // MARK: Delete

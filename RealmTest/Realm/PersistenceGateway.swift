@@ -22,7 +22,11 @@ protocol PersistenceGatewayProtocol: AnyObject {
     func get<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<M.DomainModel?, Error>
     func getArray<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<[M.DomainModel], Error>
     func listen<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnyPublisher<M.DomainModel, Error>
-    func listenArray<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnyPublisher<[M.DomainModel], Error>
+    func listenArray<M: PersistenceToDomainMapper>(
+        mapper: M,
+        range: Range<Int>?,
+        filterBlock: @escaping GetResultBlock<M>
+    ) -> AnyPublisher<[M.DomainModel], Error>
     
     func save<M: ObjectToPersistenceMapper>(object: M.Model, mapper: M) -> AnySinglePublisher<Void, Error>
     func save<M: ObjectToPersistenceMapper>(objects: [M.Model], mapper: M) -> AnySinglePublisher<Void, Error>
@@ -35,6 +39,22 @@ protocol PersistenceGatewayProtocol: AnyObject {
 extension PersistenceGatewayProtocol {
     func get<M: PersistenceToDomainMapper>(mapper: M) -> AnySinglePublisher<M.DomainModel?, Error> {
         get(mapper: mapper) { $0 }
+    }
+    
+    func getArray<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<[M.DomainModel], Error> {
+        getArray(mapper: mapper) { $0 }
+    }
+    
+    func listen<M: PersistenceToDomainMapper>(mapper: M) -> AnyPublisher<M.DomainModel, Error> {
+        listen(mapper: mapper) { $0 }
+    }
+    
+    func listenArray<M: PersistenceToDomainMapper>(mapper: M, range: Range<Int>? = nil) -> AnyPublisher<[M.DomainModel], Error> {
+        listenArray(mapper: mapper, range: nil) { $0 }
+    }
+    
+    func count<T: ObjectToPersistenceMapper>(_ type: T.Type) -> AnySinglePublisher<Int, Error> {
+        count(type) { $0 }
     }
 }
 
@@ -82,11 +102,19 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
             .eraseToAnyPublisher()
     }
     
-    func listenArray<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnyPublisher<[M.DomainModel], Error> {
+    func listenArray<M: PersistenceToDomainMapper>(
+        mapper: M,
+        range: Range<Int>?,
+        filterBlock: @escaping GetResultBlock<M>
+    ) -> AnyPublisher<[M.DomainModel], Error> {
         return realm(scheduler: RunLoop.main)
             .map { $0.objects(M.PersistenceModel.self) }
             .flatMap(\.collectionPublisher)
-            .map { filterBlock($0) }
+            .map { results -> [M.PersistenceModel] in
+                let items = filterBlock(results)
+                let slice = range.map { $0.clamped(to: 0..<items.count) }.map { Array(items[$0]) }
+                return slice ?? Array(items)
+            }
             .map { $0.map(mapper.convert) }
             .eraseToAnyPublisher()
     }

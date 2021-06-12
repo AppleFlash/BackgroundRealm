@@ -10,36 +10,6 @@ import XCTest
 import RealmSwift
 import Combine
 
-// MARK: - Objects
-
-private struct NotPrimaryKeyUser: Equatable {
-    let name: String
-    let age: Int
-}
-
-final class RealmNotPrimaryKeyUser: Object {
-    @objc dynamic var name: String = ""
-    @objc dynamic var age: Int = 0
-}
-
-// MARK: - Mappers
-
-private struct DonainRealmNotPrimaryMapper: ObjectToPersistenceMapper {
-    func convert(model: NotPrimaryKeyUser) -> RealmNotPrimaryKeyUser {
-        let user = RealmNotPrimaryKeyUser()
-        user.age = model.age
-        user.name = model.name
-        
-        return user
-    }
-}
-
-private struct RealmDomainNotPrimaryMapper: PersistenceToDomainMapper {
-    func convert(persistence: RealmNotPrimaryKeyUser) -> NotPrimaryKeyUser {
-        return NotPrimaryKeyUser(name: persistence.name, age: persistence.age)
-    }
-}
-
 // MARK: - Test
 
 final class PersistenceNotPrimaryGatewayTests: XCTestCase {
@@ -50,7 +20,7 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         super.setUp()
         
         let queue = DispatchQueue(label: "com.test.persistence")
-        let config = Realm.Configuration(inMemoryIdentifier: "in memory test realm")
+        let config = Realm.Configuration(inMemoryIdentifier: "in memory not primary test realm")
         persistence = PersistenceGateway(queue: queue, configuration: config)
     }
     
@@ -210,113 +180,7 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         waitForExpectations(timeout: 2)
         XCTAssertEqual(users, savedUsers)
     }
-    
-    // MARK: Listen
-    
-    func test_listenSingleNotPrimaryObject_success() {
-        // given
-        let user = createUser()
-        let expectedChangedAges = [20, 30]
-        var changedAges: [Int] = []
-        let expect = expectation(description: "save")
-        persistence
-            .listen(mapper: RealmDomainNotPrimaryMapper()) { results in
-                results.filter("name = %@", user.name)
-            }
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { user in
-                    changedAges.append(user.age)
-                    if changedAges.count == expectedChangedAges.count {
-                        expect.fulfill()
-                    }
-                }
-            )
-            .store(in: &subscriptions)
-
-        // when
-        persistence.save(object: NotPrimaryKeyUser(name: user.name, age: 20), mapper: DonainRealmNotPrimaryMapper())
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.save(object: NotPrimaryKeyUser(name: user.name, age: 30), mapper: DonainRealmNotPrimaryMapper())
-            }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-            .store(in: &subscriptions)
-
-        // then
-        waitForExpectations(timeout: 2)
-        XCTAssertEqual(changedAges, expectedChangedAges)
-    }
-    
-    func test_listenArrayOfNotPrimaryObject_validInsert_success() {
-        // given
-        let oldUser = createUser(age: 2)
-        let newUser = createUser(age: 3)
-        let users = [createUser(age: 1), createUser(age: 1), oldUser]
-        let expectedUsers = [[oldUser], [oldUser, newUser]]
-        var receivedUsers: [[NotPrimaryKeyUser]] = []
-        let expect = expectation(description: "save")
         
-        persistence!.listenArray(mapper: RealmDomainNotPrimaryMapper()) { $0.filter("age > %@", 1) }
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { users in
-                    if !users.isEmpty {
-                        receivedUsers.append(users)
-                    }
-                    if receivedUsers.count == expectedUsers.count {
-                        expect.fulfill()
-                    }
-                }
-            )
-            .store(in: &subscriptions)
-        
-        // when
-        persistence.save(objects: users, mapper: DonainRealmNotPrimaryMapper())
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.save(object: newUser, mapper: DonainRealmNotPrimaryMapper())
-            }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-            .store(in: &subscriptions)
-
-        // then
-        waitForExpectations(timeout: 2)
-        XCTAssertEqual(receivedUsers, expectedUsers)
-    }
-    
-    func test_listenArrayOfNotPrimaryObject_validDelete_success() {
-        // given
-        let users = [createUser(), createUser()]
-        let expectedUsers = Array(users.dropLast())
-        var receivedUsers: [NotPrimaryKeyUser] = []
-        let expect = expectation(description: "save")
-        
-        persistence!.listenArray(mapper: RealmDomainNotPrimaryMapper()) { $0 }
-            .dropFirst()
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { users in
-                    receivedUsers = users
-                    expect.fulfill()
-                }
-            )
-            .store(in: &subscriptions)
-        
-        // when
-        persistence.save(objects: users, mapper: DonainRealmNotPrimaryMapper())
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.delete(DonainRealmNotPrimaryMapper.self) { $0.filter("name = %@", users.last!.name) }
-            }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-            .store(in: &subscriptions)
-
-        // then
-        waitForExpectations(timeout: 2)
-        XCTAssertEqual(receivedUsers, expectedUsers)
-    }
-    
     // MARK: Delete
     
     func test_deleteNotPrimary_success() {
