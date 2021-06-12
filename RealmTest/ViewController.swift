@@ -19,7 +19,7 @@ class ViewController: UIViewController {
 //
 //        save()
 //        get()
-        listenSingle()
+//        listenSingle()
 //        arbitraryUpdate()
 //        deleteByObject()
     }
@@ -60,6 +60,7 @@ class ViewController: UIViewController {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             self.userStorage.getUser(id: ID)
+                .compactMap { $0 }
                 .map { user in
                     var newUser = user
                     newUser.name = "api test new 1!"
@@ -76,6 +77,7 @@ class ViewController: UIViewController {
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                 self.userStorage.getUser(id: ID)
+                    .compactMap { $0 }
                     .map { user in
                         var newUser = user
                         newUser.name = "api test new 2!"

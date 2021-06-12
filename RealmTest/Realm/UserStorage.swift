@@ -19,15 +19,15 @@ final class UserStorage {
         gateway = PersistenceGateway(queue: queue, configuration: config)
     }
     
-    func update(user: User) -> AnyPublisher<Void, Error> {
+    func update(user: User) -> AnySinglePublisher<Void, Error> {
         return gateway.save(object: user, mapper: UserMapper())
     }
     
-    func save(user: APIUser) -> AnyPublisher<Void, Error> {
+    func save(user: APIUser) -> AnySinglePublisher<Void, Error> {
         return gateway.save(object: user, mapper: APIUserMapper())
     }
     
-    func getUser(id: String) -> AnyPublisher<User, Error> {
+    func getUser(id: String) -> AnySinglePublisher<User?, Error> {
         return gateway.get(mapper: RealmUserMapper()) { $0.filter("id = %@", id) }
     }
     
@@ -35,7 +35,7 @@ final class UserStorage {
         return gateway.listen(mapper: RealmUserMapper()) { $0.filter("id = %@", id) }
     }
     
-    func update(id: String) -> AnyPublisher<Void, Error> {
+    func update(id: String) -> AnySinglePublisher<Void, Error> {
         return gateway.updateAction { realm in
             let user = realm.object(ofType: RealmUser.self, forPrimaryKey: id)!
             user.name = "update block name"
@@ -45,7 +45,7 @@ final class UserStorage {
         }
     }
     
-    func delete(id: String) -> AnyPublisher<Void, Error> {
+    func delete(id: String) -> AnySinglePublisher<Void, Error> {
         return gateway.delete(UserMapper.self) { $0.filter("id = %@", id) }
     }
     

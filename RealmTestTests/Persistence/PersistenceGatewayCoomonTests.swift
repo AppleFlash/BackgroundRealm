@@ -58,7 +58,7 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         super.tearDown()
     }
     
-    func test_saveFromMainReadFromMain_success() {
+    func test_callSaveFromMainReadFromMain_success() {
         // when
         XCTAssert(Thread.isMainThread)
         let object = DumbObject(field: 1)
@@ -84,7 +84,7 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         XCTAssertFalse(isReceiveOnMain ?? true)
     }
     
-    func test_saveFromMainReadFromBackground_success() {
+    func test_callSaveFromMainReadFromBackground_success() {
         // when
         XCTAssert(Thread.isMainThread)
         let object = DumbObject(field: 1)
@@ -109,7 +109,7 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         XCTAssertFalse(isReceiveOnMain ?? true)
     }
     
-    func test_saveFromBackgroundReadFromMain_success() {
+    func test_callSaveFromBackgroundReadFromMain_success() {
         // when
         XCTAssert(Thread.isMainThread)
         let object = DumbObject(field: 1)
@@ -139,7 +139,7 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         XCTAssertFalse(isReceiveOnMain ?? true)
     }
     
-    func test_saveFromBackgroundReadFromBackground_success() {
+    func test_callSaveFromBackgroundReadFromBackground_success() {
         // when
         XCTAssert(Thread.isMainThread)
         let object = DumbObject(field: 1)
