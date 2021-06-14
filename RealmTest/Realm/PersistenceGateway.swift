@@ -13,9 +13,16 @@ enum PersistenceError: Error {
     case notPrimaryKeyObject
 }
 
+struct ChangesetItem<T> {
+    let index: Int
+    let item: T
+}
+
+extension ChangesetItem: Equatable where T: Equatable {}
+
 enum PersistenceChangeset<T, Failure: Error> {
     case initial(_ objects: [T])
-    case update(deleted: [Int], inserted: [T], modified: [T])
+    case update(deleted: [Int], inserted: [ChangesetItem<T>], modified: [ChangesetItem<T>])
     case error(Failure)
 }
 
@@ -147,11 +154,19 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
                 case let .initial(objects):
                     return .initial(objects.map(mapper.convert))
                 case let .update(objects, deletions, insertions, modifications):
-                    let tt = insertions.map {
-                        
+                    var nModifications: [Int] = []
+                    if !deletions.isEmpty {
+                        for modIndex in modifications {
+                            let deletesLessThenMod = deletions.filter { $0 <= modIndex }.count
+                            let newMod = max(0, modIndex - deletesLessThenMod)
+                            nModifications.append(newMod)
+                        }
+                    } else {
+                        nModifications = modifications
                     }
-                    let inserted = insertions.map { mapper.convert(persistence: objects[$0]) }
-                    let modified = modifications.map { mapper.convert(persistence: objects[$0]) }
+                    
+                    let inserted = insertions.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
+                    let modified = nModifications.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
 
                     return .update(deleted: deletions, inserted: inserted, modified: modified)
                 case let .error(error):
