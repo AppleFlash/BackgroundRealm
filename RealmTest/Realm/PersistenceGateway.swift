@@ -13,6 +13,27 @@ enum PersistenceError: Error {
     case notPrimaryKeyObject
 }
 
+enum PersistenceChangeset<T, Failure: Error> {
+    case initial(_ objects: [T])
+    case update(deleted: [Int], inserted: [T], modified: [T])
+    case error(Failure)
+}
+
+extension PersistenceChangeset: Equatable where T: Equatable {
+    static func == (lhs: PersistenceChangeset<T, Failure>, rhs: PersistenceChangeset<T, Failure>) -> Bool {
+        switch (lhs, rhs) {
+        case (let .initial(lhsObj), let .initial(rhsObj)):
+            return lhsObj == rhsObj
+        case (let .update(lhsDeleted, lhsInserted, lhsModifier), let .update(rhsDeleted, rhsInserted, rhsModifier)):
+            return lhsDeleted == rhsDeleted && lhsInserted == rhsInserted && lhsModifier == rhsModifier
+        case (let .error(lhsError), let .error(rhsError)):
+            return lhsError == rhsError
+        default:
+            return false
+        }
+    }
+}
+
 typealias GetResultBlock<T: PersistenceToDomainMapper> = (Results<T.PersistenceModel>) -> Results<T.PersistenceModel>
 typealias SaveResultBlock<T: ObjectToPersistenceMapper> = (Results<T.PersistenceModel>) -> Results<T.PersistenceModel>
 
@@ -20,15 +41,24 @@ protocol PersistenceGatewayProtocol: AnyObject {
     func updateAction(_ action: @escaping (Realm) -> Void) -> AnySinglePublisher<Void, Error>
     
     func get<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<M.DomainModel?, Error>
+    
     func getArray<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<[M.DomainModel], Error>
+    
     func listen<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnyPublisher<M.DomainModel, Error>
+    
     func listenArray<M: PersistenceToDomainMapper>(
         mapper: M,
         range: Range<Int>?,
         filterBlock: @escaping GetResultBlock<M>
     ) -> AnyPublisher<[M.DomainModel], Error>
     
+    func listenArrayChangesSet<M: PersistenceToDomainMapper>(
+        mapper: M,
+        filterBlock: @escaping GetResultBlock<M>
+    ) -> AnyPublisher<PersistenceChangeset<M.DomainModel, Error>, Error>
+    
     func save<M: ObjectToPersistenceMapper>(object: M.Model, mapper: M) -> AnySinglePublisher<Void, Error>
+    
     func save<M: ObjectToPersistenceMapper>(objects: [M.Model], mapper: M) -> AnySinglePublisher<Void, Error>
     
     func delete<M: ObjectToPersistenceMapper>(_ type: M.Type, deleteHandler: @escaping SaveResultBlock<M>) -> AnySinglePublisher<Void, Error>
@@ -68,7 +98,10 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
     }
     
     private func realm<S: Scheduler>(scheduler: S) -> AnyPublisher<Realm, Error> {
-        return Just((configuration, nil)) 
+        // async
+//        return Realm.asyncOpen(configuration: configuration).eraseToAnyPublisher()
+        
+        return Just((configuration, nil))
             .receive(on: scheduler)
             .tryMap(Realm.init)
             .eraseToAnyPublisher()
@@ -99,6 +132,32 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
             .flatMap(\.collectionPublisher)
             .compactMap { filterBlock($0).last }
             .map(mapper.convert)
+            .eraseToAnyPublisher()
+    }
+    
+    func listenArrayChangesSet<M: PersistenceToDomainMapper>(
+        mapper: M,
+        filterBlock: @escaping GetResultBlock<M>
+    ) -> AnyPublisher<PersistenceChangeset<M.DomainModel, Error>, Error> {
+        return realm(scheduler: RunLoop.main)
+            .map { $0.objects(M.PersistenceModel.self) }
+            .flatMap { filterBlock($0).changesetPublisher }
+            .map { changeset in
+                switch changeset {
+                case let .initial(objects):
+                    return .initial(objects.map(mapper.convert))
+                case let .update(objects, deletions, insertions, modifications):
+                    let tt = insertions.map {
+                        
+                    }
+                    let inserted = insertions.map { mapper.convert(persistence: objects[$0]) }
+                    let modified = modifications.map { mapper.convert(persistence: objects[$0]) }
+
+                    return .update(deleted: deletions, inserted: inserted, modified: modified)
+                case let .error(error):
+                    return .error(error)
+                }
+            }
             .eraseToAnyPublisher()
     }
     
