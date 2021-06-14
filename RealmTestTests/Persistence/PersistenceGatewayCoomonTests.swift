@@ -46,8 +46,8 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        let queue = DispatchQueue(label: "com.test.persistence")
-        let config = Realm.Configuration(inMemoryIdentifier: "in memory test realm")
+        let queue = DispatchQueue(label: "com.test.persistence.common")
+        let config = Realm.Configuration(inMemoryIdentifier: "in memory common test realm")
         persistence = PersistenceGateway(queue: queue, configuration: config)
     }
     

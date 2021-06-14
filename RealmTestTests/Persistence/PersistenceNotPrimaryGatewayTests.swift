@@ -19,7 +19,7 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        let queue = DispatchQueue(label: "com.test.persistence")
+        let queue = DispatchQueue(label: "com.test.persistence.primary.not")
         let config = Realm.Configuration(inMemoryIdentifier: "in memory not primary test realm")
         persistence = PersistenceGateway(queue: queue, configuration: config)
     }
