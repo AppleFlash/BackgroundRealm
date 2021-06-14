@@ -242,10 +242,11 @@ final class PersistenceGatewayListenTests: XCTestCase {
         // given
         let firstDeleteUser = createUser(age: 0)
         let userToModify = createUser(age: 1)
-        let middleDeleteUser = createUser(age: 2)
-        let simpleUser = createUser(age: 3)
-        let lastDeleteUser = createUser(age: 4)
-        let userToInsert = createUser(age: 5)
+        let userToInsert1 = createUser(age: 2)
+        let middleDeleteUser = createUser(age: 3)
+        let simpleUser = createUser(age: 4)
+        let lastDeleteUser = createUser(age: 5)
+        let userToInsert2 = createUser(age: 6)
         
         let users = [firstDeleteUser, userToModify, middleDeleteUser, simpleUser, lastDeleteUser]
         let expect = expectation(description: "listen")
@@ -254,19 +255,20 @@ final class PersistenceGatewayListenTests: XCTestCase {
         
         var modifiedUser = userToModify
         modifiedUser.name = "modified"
-        let expectedUsersList = [modifiedUser, simpleUser, userToInsert]
+        let expectedUsersList = [modifiedUser, userToInsert1, simpleUser, userToInsert2]
         var resultUsersList: [PrimaryKeyUser] = []
         var callCount = 0
         
         persistence.save(objects: users, mapper: domainMapper)
             .flatMap { [persistence] in
-                persistence!.listenArrayChangesSet(mapper: realmMapper) { $0.sorted(byKeyPath: #keyPath(RealmPrimaryKeyUser.age), ascending: true) }
+                persistence!.listenArrayChangesSet(mapper: realmMapper) { $0 }
             }
             .sink(receiveCompletion: { _ in }) { receivedChangeset in
                 switch receivedChangeset {
                 case let .initial(objects):
                     resultUsersList = objects
                 case let .update(deleted, inserted, modified):
+                    print("===== MODIFIED = \(modified)")
                     deleted.reversed().forEach { resultUsersList.remove(at: $0) }
                     inserted.forEach { resultUsersList.insert($0.item, at: $0.index) }
                     modified.forEach { resultUsersList[$0.index] = $0.item }
@@ -277,17 +279,19 @@ final class PersistenceGatewayListenTests: XCTestCase {
                 callCount += 1
                 if callCount == 2 {
                     resultUsersList = resultUsersList.sorted { $0.age < $1.age }
+                    print("===== RESULT = \(resultUsersList)")
                     expect.fulfill()
                 }
             }
             .store(in: &subscriptions)
         
         // when
-        persistence.save(objects: users, mapper: domainMapper)
-            .delay(for: 1, scheduler: RunLoop.main)
+        Just(())
+            .delay(for: 2, scheduler: RunLoop.main)
             .flatMap { [persistence] in
                 persistence!.updateAction { realm in
-                    realm.add(domainMapper.convert(model: userToInsert), update: .all)
+                    realm.add(domainMapper.convert(model: userToInsert1), update: .all)
+                    realm.add(domainMapper.convert(model: userToInsert2), update: .all)
                     realm.add(domainMapper.convert(model: modifiedUser), update: .modified)
                     let deleteIds = [firstDeleteUser, middleDeleteUser, lastDeleteUser].map(\.id)
                     realm.delete(realm.objects(RealmPrimaryKeyUser.self).filter("id IN %@", deleteIds))
@@ -297,7 +301,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
             .store(in: &subscriptions)
         
         // then
-        waitForExpectations(timeout: 2)
+        waitForExpectations(timeout: 500)
         XCTAssertEqual(resultUsersList, expectedUsersList)
     }
     

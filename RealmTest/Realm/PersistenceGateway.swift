@@ -158,7 +158,9 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
                     if !deletions.isEmpty {
                         for modIndex in modifications {
                             let deletesLessThenMod = deletions.filter { $0 <= modIndex }.count
-                            let newMod = max(0, modIndex - deletesLessThenMod)
+                            let insertsGreaterThenMode = insertions.filter { $0 <= modIndex }.count
+                            var newMod = max(0, modIndex - deletesLessThenMod)
+                            newMod = min(objects.count - 1, newMod + insertsGreaterThenMode)
                             nModifications.append(newMod)
                         }
                     } else {
