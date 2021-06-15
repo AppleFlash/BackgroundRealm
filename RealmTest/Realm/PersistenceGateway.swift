@@ -9,105 +9,20 @@ import Combine
 import Foundation
 import RealmSwift
 
-enum PersistenceError: Error {
-    case notPrimaryKeyObject
-}
-
-struct ChangesetItem<T> {
-    let index: Int
-    let item: T
-}
-
-extension ChangesetItem: Equatable where T: Equatable {}
-
-enum PersistenceChangeset<T, Failure: Error> {
-    case initial(_ objects: [T])
-    case update(deleted: [Int], inserted: [ChangesetItem<T>], modified: [ChangesetItem<T>])
-    case error(Failure)
-}
-
-extension PersistenceChangeset: Equatable where T: Equatable {
-    static func == (lhs: PersistenceChangeset<T, Failure>, rhs: PersistenceChangeset<T, Failure>) -> Bool {
-        switch (lhs, rhs) {
-        case (let .initial(lhsObj), let .initial(rhsObj)):
-            return lhsObj == rhsObj
-        case (let .update(lhsDeleted, lhsInserted, lhsModifier), let .update(rhsDeleted, rhsInserted, rhsModifier)):
-            return lhsDeleted == rhsDeleted && lhsInserted == rhsInserted && lhsModifier == rhsModifier
-        case (let .error(lhsError), let .error(rhsError)):
-            return lhsError == rhsError
-        default:
-            return false
-        }
-    }
-}
-
 typealias GetResultBlock<T: PersistenceToDomainMapper> = (Results<T.PersistenceModel>) -> Results<T.PersistenceModel>
 typealias SaveResultBlock<T: ObjectToPersistenceMapper> = (Results<T.PersistenceModel>) -> Results<T.PersistenceModel>
 
-protocol PersistenceGatewayProtocol: AnyObject {
-    func updateAction(_ action: @escaping (Realm) -> Void) -> AnySinglePublisher<Void, Error>
-    
-    func get<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<M.DomainModel?, Error>
-    
-    func getArray<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<[M.DomainModel], Error>
-    
-    func listen<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnyPublisher<M.DomainModel, Error>
-    
-    func listenArray<M: PersistenceToDomainMapper>(
-        mapper: M,
-        range: Range<Int>?,
-        filterBlock: @escaping GetResultBlock<M>
-    ) -> AnyPublisher<[M.DomainModel], Error>
-    
-    func listenArrayChangesSet<M: PersistenceToDomainMapper>(
-        mapper: M,
-        filterBlock: @escaping GetResultBlock<M>
-    ) -> AnyPublisher<PersistenceChangeset<M.DomainModel, Error>, Error>
-    
-    func save<M: ObjectToPersistenceMapper>(object: M.Model, mapper: M) -> AnySinglePublisher<Void, Error>
-    
-    func save<M: ObjectToPersistenceMapper>(objects: [M.Model], mapper: M) -> AnySinglePublisher<Void, Error>
-    
-    func delete<M: ObjectToPersistenceMapper>(_ type: M.Type, deleteHandler: @escaping SaveResultBlock<M>) -> AnySinglePublisher<Void, Error>
-    
-    func count<T: ObjectToPersistenceMapper>(_ type: T.Type, filterBlock: @escaping SaveResultBlock<T>) -> AnySinglePublisher<Int, Error>
-}
-
-extension PersistenceGatewayProtocol {
-    func get<M: PersistenceToDomainMapper>(mapper: M) -> AnySinglePublisher<M.DomainModel?, Error> {
-        get(mapper: mapper) { $0 }
-    }
-    
-    func getArray<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<[M.DomainModel], Error> {
-        getArray(mapper: mapper) { $0 }
-    }
-    
-    func listen<M: PersistenceToDomainMapper>(mapper: M) -> AnyPublisher<M.DomainModel, Error> {
-        listen(mapper: mapper) { $0 }
-    }
-    
-    func listenArray<M: PersistenceToDomainMapper>(mapper: M, range: Range<Int>? = nil) -> AnyPublisher<[M.DomainModel], Error> {
-        listenArray(mapper: mapper, range: nil) { $0 }
-    }
-    
-    func count<T: ObjectToPersistenceMapper>(_ type: T.Type) -> AnySinglePublisher<Int, Error> {
-        count(type) { $0 }
-    }
-}
-
-final class PersistenceGateway: PersistenceGatewayProtocol {
-    private let queue: DispatchQueue
+final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
+    private let scheduler: S
     private let configuration: Realm.Configuration
     
-    init(queue: DispatchQueue, configuration: Realm.Configuration = .init()) {
-        self.queue = queue
+    init(scheduler: S, configuration: Realm.Configuration = .init()) {
+        self.scheduler = scheduler
         self.configuration = configuration
     }
     
     private func realm<S: Scheduler>(scheduler: S) -> AnyPublisher<Realm, Error> {
-        // async
-//        return Realm.asyncOpen(configuration: configuration).eraseToAnyPublisher()
-        
+        // Создание рилма в определенном потоке
         return Just((configuration, nil))
             .receive(on: scheduler)
             .tryMap(Realm.init)
@@ -117,14 +32,14 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
     // MARK: Get
     
     func get<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<M.DomainModel?, Error> {
-        return realm(scheduler: queue)
+        return realm(scheduler: scheduler)
             .map { $0.objects(M.PersistenceModel.self) }
             .map { filterBlock($0).last.map(mapper.convert) }
             .eraseToAnySinglePublisher()
     }
     
     func getArray<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<[M.DomainModel], Error> {
-        return realm(scheduler: queue)
+        return realm(scheduler: scheduler)
             .map { $0.objects(M.PersistenceModel.self) }
             .map { filterBlock($0) }
             .map { $0.map(mapper.convert) }
@@ -135,9 +50,11 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
     
     func listen<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnyPublisher<M.DomainModel, Error> {
         return realm(scheduler: RunLoop.main)
-            .map { $0.objects(M.PersistenceModel.self) }
-            .flatMap(\.collectionPublisher)
-            .compactMap { filterBlock($0).last }
+            .map { $0.objects(M.PersistenceModel.self) } // Получает список объектов для типа
+            .map { filterBlock($0) } // Фильтрует список объектов для получения только интересующего объекта
+            .flatMap(\.collectionPublisher) // Наблюдает за изменением фильтрованных объектов
+            .compactMap { $0.last } // Результат может содержать массив объектов, если поиск осуществлялся не по primary key, либо, если primary key нет вовсе.
+                                    // Для обработки ситуации, когда нет primary key берется `last`, а не `first`
             .map(mapper.convert)
             .eraseToAnyPublisher()
     }
@@ -153,9 +70,13 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
                 switch changeset {
                 case let .initial(objects):
                     return .initial(objects.map(mapper.convert))
+                    
                 case let .update(objects, deletions, insertions, modifications):
                     var nModifications: [Int] = []
-                    if !deletions.isEmpty {
+                    // Если есть индексы удалённых или добавленных объектов, то нужно скорректировать индексы модификации, т.к. они сдвинуты
+                    // Для этого отнимаем кол-во удаленых индексов, которые меньше либо равны каждому индексу модификации
+                    // и прибавляем кол-во добавленных индексов, которые меньше либо равны каждому индексу модификации
+                    if !deletions.isEmpty || !insertions.isEmpty {
                         for modIndex in modifications {
                             let deletesLessThenMod = deletions.filter { $0 <= modIndex }.count
                             let insertsGreaterThenMode = insertions.filter { $0 <= modIndex }.count
@@ -171,6 +92,7 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
                     let modified = nModifications.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
 
                     return .update(deleted: deletions, inserted: inserted, modified: modified)
+                    
                 case let .error(error):
                     return .error(error)
                 }
@@ -188,6 +110,7 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
             .flatMap(\.collectionPublisher)
             .map { results -> [M.PersistenceModel] in
                 let items = filterBlock(results)
+                // Если range существует - получаем слайс из коллекции, иначе берём коллекцию целиком
                 let slice = range.map { $0.clamped(to: 0..<items.count) }.map { Array(items[$0]) }
                 return slice ?? Array(items)
             }
@@ -197,15 +120,15 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
 
     // MARK: Save
     
-    func save<M: ObjectToPersistenceMapper>(object: M.Model, mapper: M) -> AnySinglePublisher<Void, Error> {
-        return realm(scheduler: queue)
+    func save<M: ObjectToPersistenceMapper>(object: M.Model, mapper: M, update: Realm.UpdatePolicy) -> AnySinglePublisher<Void, Error> {
+        return realm(scheduler: scheduler)
             .tryMap { realm in
                 try autoreleasepool {
                     let persistence = mapper.convert(model: object)
                     let hasPrimaryKey = M.PersistenceModel.primaryKey() != nil
                     
                     try realm.write {
-                        hasPrimaryKey ? realm.add(persistence, update: .all) : realm.add(persistence)
+                        hasPrimaryKey ? realm.add(persistence, update: update) : realm.add(persistence)
                     }
                     
                     return ()
@@ -214,15 +137,15 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
             .eraseToAnySinglePublisher()
     }
     
-    func save<M: ObjectToPersistenceMapper>(objects: [M.Model], mapper: M) -> AnySinglePublisher<Void, Error> {
-        return realm(scheduler: queue)
+    func save<M: ObjectToPersistenceMapper>(objects: [M.Model], mapper: M, update: Realm.UpdatePolicy) -> AnySinglePublisher<Void, Error> {
+        return realm(scheduler: scheduler)
             .tryMap { realm in
                 try autoreleasepool {
                     let persistenceObjects = objects.map(mapper.convert)
                     let hasPrimaryKey = M.PersistenceModel.primaryKey() != nil
                     
                     try realm.write {
-                        hasPrimaryKey ? realm.add(persistenceObjects, update: .all) : realm.add(persistenceObjects)
+                        hasPrimaryKey ? realm.add(persistenceObjects, update: update) : realm.add(persistenceObjects)
                     }
                     
                     return ()
@@ -234,7 +157,7 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
     // MARK: Delete
     
     func delete<M: ObjectToPersistenceMapper>(_ type: M.Type, deleteHandler: @escaping SaveResultBlock<M>) -> AnySinglePublisher<Void, Error> {
-        return realm(scheduler: queue)
+        return realm(scheduler: scheduler)
             .tryMap { realm in
                 try autoreleasepool {
                     let objects = realm.objects(M.PersistenceModel.self)
@@ -253,7 +176,7 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
     // MARK: Action
     
     func updateAction(_ action: @escaping (Realm) -> Void) -> AnySinglePublisher<Void, Error> {
-        return realm(scheduler: queue)
+        return realm(scheduler: scheduler)
             .tryMap { realm in
                 try autoreleasepool {
                     try realm.write {
@@ -265,7 +188,7 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
     }
     
     func count<T: ObjectToPersistenceMapper>(_ type: T.Type, filterBlock: @escaping SaveResultBlock<T>) -> AnySinglePublisher<Int, Error> {
-        return realm(scheduler: queue)
+        return realm(scheduler: scheduler)
             .map { $0.objects(T.PersistenceModel.self) }
             .compactMap { filterBlock($0).count }
             .eraseToAnySinglePublisher()

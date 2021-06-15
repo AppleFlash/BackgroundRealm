@@ -25,7 +25,7 @@ class ViewController: UIViewController {
     }
     
     func save() {
-        let user = APIUser(id: UUID().uuidString, name: "api user")
+        let user = APIUser(id: ID, name: "api user")
 
         userStorage.save(user: user)
             .receive(on: RunLoop.main)
@@ -63,7 +63,7 @@ class ViewController: UIViewController {
                 .compactMap { $0 }
                 .map { user in
                     var newUser = user
-                    newUser.name = "api test new 1!"
+                    newUser.name = "api test new 3!"
                     return newUser
                 }
                 .flatMap {
@@ -80,7 +80,7 @@ class ViewController: UIViewController {
                     .compactMap { $0 }
                     .map { user in
                         var newUser = user
-                        newUser.name = "api test new 2!"
+                        newUser.name = "api test new 4!"
                         return newUser
                     }
                     .flatMap {

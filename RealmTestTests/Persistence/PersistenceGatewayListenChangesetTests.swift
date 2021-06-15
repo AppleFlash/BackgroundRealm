@@ -10,6 +10,7 @@ import XCTest
 import RealmSwift
 import Combine
 
+/// Тест кейсы по наблюдению за массивом объектов. Всегда возвращается диф изменений
 final class PersistenceGatewayListenChangesetTests: XCTestCase {
     private var persistence: PersistenceGatewayProtocol!
     private var subscriptions = Set<AnyCancellable>()
@@ -19,7 +20,7 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
         
         let queue = DispatchQueue(label: "com.test.persistence.changeset")
         let config = Realm.Configuration(inMemoryIdentifier: "in memory listen changeset test realm")
-        persistence = PersistenceGateway(queue: queue, configuration: config)
+        persistence = PersistenceGateway(scheduler: queue, configuration: config)
     }
     
     override func tearDown() {

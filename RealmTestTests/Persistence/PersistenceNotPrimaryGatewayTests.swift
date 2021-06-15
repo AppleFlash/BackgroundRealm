@@ -12,6 +12,7 @@ import Combine
 
 // MARK: - Test
 
+/// Тест кейсы по взаимодействию с объектами без primary key: сохранение, получение, удаление, количество
 final class PersistenceNotPrimaryGatewayTests: XCTestCase {
     private var persistence: PersistenceGatewayProtocol!
     private var subscriptions = Set<AnyCancellable>()
@@ -21,7 +22,7 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         
         let queue = DispatchQueue(label: "com.test.persistence.primary.not")
         let config = Realm.Configuration(inMemoryIdentifier: "in memory not primary test realm")
-        persistence = PersistenceGateway(queue: queue, configuration: config)
+        persistence = PersistenceGateway(scheduler: queue, configuration: config)
     }
     
     override func tearDown() {
@@ -135,7 +136,7 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         
         // when
         persistence
-            .save(object: user, mapper: DonainRealmNotPrimaryMapper())
+            .save(object: user, mapper: DonainRealmNotPrimaryMapper(), update: .all)
             .flatMap { [persistence] in
                 persistence!.save(object: newUserData, mapper: DonainRealmNotPrimaryMapper())
             }

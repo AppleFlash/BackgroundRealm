@@ -28,6 +28,9 @@
 		00C169D8266FFF61005EF0E1 /* PersistenceNotPrimaryGatewayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C169D7266FFF61005EF0E1 /* PersistenceNotPrimaryGatewayTests.swift */; };
 		00C169D926700097005EF0E1 /* Realm.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B4580A266028E600D15EFD /* Realm.framework */; };
 		00C169DA26700097005EF0E1 /* RealmSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B4580B266028E600D15EFD /* RealmSwift.framework */; };
+		00F62025267880B600107F16 /* ChangesetItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F62024267880B600107F16 /* ChangesetItem.swift */; };
+		00F62027267880F500107F16 /* PersistenceChangeset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F62026267880F500107F16 /* PersistenceChangeset.swift */; };
+		00F6202A267881A700107F16 /* PersistenceGatewayProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F62029267881A700107F16 /* PersistenceGatewayProtocol.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +67,9 @@
 		00C169CC266FFF48005EF0E1 /* RealmTestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RealmTestTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00C169D0266FFF48005EF0E1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00C169D7266FFF61005EF0E1 /* PersistenceNotPrimaryGatewayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceNotPrimaryGatewayTests.swift; sourceTree = "<group>"; };
+		00F62024267880B600107F16 /* ChangesetItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangesetItem.swift; sourceTree = "<group>"; };
+		00F62026267880F500107F16 /* PersistenceChangeset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceChangeset.swift; sourceTree = "<group>"; };
+		00F62029267881A700107F16 /* PersistenceGatewayProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceGatewayProtocol.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,9 +141,12 @@
 			isa = PBXGroup;
 			children = (
 				00B4580F2660291900D15EFD /* PersistenceGateway.swift */,
+				00F62029267881A700107F16 /* PersistenceGatewayProtocol.swift */,
 				00B4581126602BD200D15EFD /* Mapper.swift */,
 				00B4581326602BE700D15EFD /* User.swift */,
 				00144D1A2666668D00EE7664 /* UserStorage.swift */,
+				00F62024267880B600107F16 /* ChangesetItem.swift */,
+				00F62026267880F500107F16 /* PersistenceChangeset.swift */,
 			);
 			path = Realm;
 			sourceTree = "<group>";
@@ -299,6 +308,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				00F6202A267881A700107F16 /* PersistenceGatewayProtocol.swift in Sources */,
 				00AAC49D2660257C009F43A1 /* ViewController.swift in Sources */,
 				00AAC4992660257C009F43A1 /* AppDelegate.swift in Sources */,
 				00144D1B2666668D00EE7664 /* UserStorage.swift in Sources */,
@@ -306,6 +316,8 @@
 				00BBF68D2674A13F0033844D /* Single.swift in Sources */,
 				00B458102660291900D15EFD /* PersistenceGateway.swift in Sources */,
 				00B4581226602BD200D15EFD /* Mapper.swift in Sources */,
+				00F62025267880B600107F16 /* ChangesetItem.swift in Sources */,
+				00F62027267880F500107F16 /* PersistenceChangeset.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

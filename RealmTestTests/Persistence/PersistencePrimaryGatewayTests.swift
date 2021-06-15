@@ -13,6 +13,7 @@ import Combine
 
 // MARK: - Test
 
+/// Тест кейсы по взаимодействию с объектами с primary key: сохранение, обновление, получение, удаление
 final class PersistencePrimaryGatewayTests: XCTestCase {
     private var persistence: PersistenceGatewayProtocol!
     private var subscriptions = Set<AnyCancellable>()
@@ -22,7 +23,7 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         
         let queue = DispatchQueue(label: "com.test.persistence.primary")
         let config = Realm.Configuration(inMemoryIdentifier: "in memory primary test realm")
-        persistence = PersistenceGateway(queue: queue, configuration: config)
+        persistence = PersistenceGateway(scheduler: queue, configuration: config)
     }
     
     override func tearDown() {
@@ -67,7 +68,7 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         persistence
             .save(object: user, mapper: DonainRealmPrimaryMapper())
             .flatMap { [persistence] in
-                persistence!.save(object: newUserData, mapper: DonainRealmPrimaryMapper())
+                persistence!.save(object: newUserData, mapper: DonainRealmPrimaryMapper(), update: .modified)
             }
             .flatMap { [persistence] in
                 persistence!.get(mapper: RealmDomainPrimaryMapper())
@@ -94,7 +95,7 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         persistence
             .save(object: user, mapper: DonainRealmPrimaryMapper())
             .flatMap { [persistence] in
-                persistence!.save(object: newUserData, mapper: DonainRealmPrimaryMapper())
+                persistence!.save(object: newUserData, mapper: DonainRealmPrimaryMapper(), update: .modified)
             }
             .flatMap { [persistence] in
                 persistence!.count(DonainRealmPrimaryMapper.self) { $0 }

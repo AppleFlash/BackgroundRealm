@@ -10,6 +10,7 @@ import XCTest
 import RealmSwift
 import Combine
 
+/// Тест кейсы по наблюдению за объектами. Наблюдение как за одним объектом так и за массивом. В случае с наблюдением за массивом - всегда возвращается массив, не диф
 final class PersistenceGatewayListenTests: XCTestCase {
     private var persistence: PersistenceGatewayProtocol!
     private var subscriptions = Set<AnyCancellable>()
@@ -19,7 +20,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         
         let queue = DispatchQueue(label: "com.test.persistence.listen")
         let config = Realm.Configuration(inMemoryIdentifier: "in memory listen test realm")
-        persistence = PersistenceGateway(queue: queue, configuration: config)
+        persistence = PersistenceGateway(scheduler: queue, configuration: config)
     }
     
     override func tearDown() {
@@ -41,7 +42,6 @@ final class PersistenceGatewayListenTests: XCTestCase {
             .listen(mapper: RealmDomainPrimaryMapper()) { results in
                 results.filter("id = %@", user.id)
             }
-            .print()
             .sink(
                 receiveCompletion: { _ in },
                 receiveValue: { user in

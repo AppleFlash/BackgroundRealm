@@ -10,21 +10,21 @@ import RealmSwift
 import Combine
 
 final class UserStorage {
-    private let gateway: PersistenceGateway
+    private let gateway: PersistenceGateway<DispatchQueue>
 //    private lazy var closureGateway = PersistenceClosureGateway(queue: DispatchQueue(label: "com.user.closure.persistence"))
     
     init() {
         let queue = DispatchQueue(label: "com.user.persistence")
         let config = Realm.Configuration(objectTypes: [RealmUser.self])
-        gateway = PersistenceGateway(queue: queue, configuration: config)
+        gateway = PersistenceGateway(scheduler: queue, configuration: config)
     }
     
     func update(user: User) -> AnySinglePublisher<Void, Error> {
-        return gateway.save(object: user, mapper: UserMapper())
+        return gateway.save(object: user, mapper: UserMapper(), update: .modified)
     }
     
     func save(user: APIUser) -> AnySinglePublisher<Void, Error> {
-        return gateway.save(object: user, mapper: APIUserMapper())
+        return gateway.save(object: user, mapper: APIUserMapper(), update: .all)
     }
     
     func getUser(id: String) -> AnySinglePublisher<User?, Error> {

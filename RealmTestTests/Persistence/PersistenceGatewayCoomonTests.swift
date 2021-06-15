@@ -39,6 +39,7 @@ private struct RealmDomainDumbObjectMapper: PersistenceToDomainMapper {
 
 // MARK: - Test
 
+/// Тест кейсы по работе с потоками
 final class PersistenceGatewayCoomonTests: XCTestCase {
     private var persistence: PersistenceGatewayProtocol!
     private var subscriptions = Set<AnyCancellable>()
@@ -48,7 +49,7 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         
         let queue = DispatchQueue(label: "com.test.persistence.common")
         let config = Realm.Configuration(inMemoryIdentifier: "in memory common test realm")
-        persistence = PersistenceGateway(queue: queue, configuration: config)
+        persistence = PersistenceGateway(scheduler: queue, configuration: config)
     }
     
     override func tearDown() {
