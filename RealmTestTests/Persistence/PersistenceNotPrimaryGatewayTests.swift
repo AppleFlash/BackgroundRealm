@@ -210,6 +210,82 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         XCTAssertEqual(countAfterDelete, 1)
     }
     
+    func test_saveContainer() {
+        // given
+        let expect = expectation(description: "save")
+        let users: [PrimaryKeyUser] = [.init(id: "1", name: "1", age: 1), .init(id: "2", name: "2", age: 2), .init(id: "3", name: "3", age: 3)]
+        let toSave = UserContainer(users: users)
+        
+        // when
+        let userMapper = DonainRealmPrimaryMapper()
+        let mapper = DomainRealmUsersContainerMapper(userMapper: userMapper)
+        persistence.save(object: toSave, mapper: mapper, update: .all)
+            .sink(receiveCompletion: { _ in }, receiveValue: expect.fulfill)
+            .store(in: &subscriptions)
+        
+        // then
+        waitForExpectations(timeout: 2)
+    }
+    
+    func test_getContainer() {
+        // given
+        let expect = expectation(description: "save")
+        let users: [PrimaryKeyUser] = [.init(id: "1", name: "1", age: 1), .init(id: "2", name: "2", age: 2), .init(id: "3", name: "3", age: 3)]
+        let toSave = UserContainer(users: users)
+        var received: UserContainer?
+        
+        // when
+        let getMapper = RealmDomainUserContainerMapper(userMapper: .init())
+        let saveMapper = DomainRealmUsersContainerMapper(userMapper: .init())
+        persistence.save(object: toSave, mapper: saveMapper, update: .all)
+            .flatMap { [persistence] in
+                persistence!.get(mapper: getMapper)
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: {
+                received = $0
+                expect.fulfill()
+            })
+            .store(in: &subscriptions)
+        
+        // then
+        waitForExpectations(timeout: 2)
+        XCTAssertEqual(toSave, received)
+    }
+    
+    func test_deleteObjectFromContainer() {
+        // given
+        let expect = expectation(description: "save")
+        let usersToSave: [PrimaryKeyUser] = [.init(id: "1", name: "1", age: 1), .init(id: "2", name: "2", age: 2), .init(id: "3", name: "3", age: 3)]
+        let toSave = UserContainer(users: usersToSave)
+        let resultsUsers = usersToSave.dropLast()
+        let resultsContainer = UserContainer(users: Array(resultsUsers))
+        var received: UserContainer?
+        
+        // when
+        let getMapper = RealmDomainUserContainerMapper(userMapper: .init())
+        let saveMapper = DomainRealmUsersContainerMapper(userMapper: .init())
+        persistence.save(object: toSave, mapper: saveMapper, update: .all)
+            .flatMap { [persistence] in
+                persistence!.updateAction { realm in
+                    let list = realm.objects(RealmUserContainer.self).first!
+                    let index = list.usersList.index(matching: NSPredicate(format: "id = %@", usersToSave.last!.id))!
+                    list.usersList.remove(at: index)
+                }
+            }
+            .flatMap { [persistence] in
+                persistence!.get(mapper: getMapper)
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: {
+                received = $0
+                expect.fulfill()
+            })
+            .store(in: &subscriptions)
+        
+        // then
+        waitForExpectations(timeout: 2)
+        XCTAssertEqual(resultsContainer, received)
+    }
+    
     private func createUser(name: String = UUID().uuidString, age: Int = .random(in: 10...80)) -> NotPrimaryKeyUser {
         return NotPrimaryKeyUser(name: name, age: age)
     }

@@ -208,6 +208,298 @@ final class PersistenceGatewayListenTests: XCTestCase {
         waitForExpectations(timeout: 2)
         XCTAssertEqual(receivedUsers, expectedUsers)
     }
+    
+    // MARK: Listen container after create
+    
+    func test_listenContainer_containerExistsBeforeStartListen() {
+        // given
+        let users: [PrimaryKeyUser] = [createUser(id: "1", name: "1"), createUser(id: "2", name: "2")]
+        let container = KeyedUserContainer(id: "1", users: users)
+        var count = 0
+        var received: KeyedUserContainer?
+        
+        // when
+        let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
+        let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
+        persistence.save(object: container, mapper: saveMapper, update: .all)
+            .flatMap { [persistence] in
+                persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: {
+                count += 1
+                received = $0
+            })
+            .store(in: &subscriptions)
+        
+        // then
+        _ = XCTWaiter.wait(for: [.init()], timeout: 2)
+        XCTAssertEqual(count, 1)
+        XCTAssertEqual(container, received)
+    }
+    
+    func test_listenContainer_containerExistsBeforeStartListen_addNew() {
+        // given
+        let users: [PrimaryKeyUser] = [createUser(id: "1", name: "1"), createUser(id: "2", name: "2")]
+        let container = KeyedUserContainer(id: "1", users: users)
+        let newUser = createUser(id: "3", name: "3")
+        let updatedUsers = users + [newUser]
+        let resultContainer = KeyedUserContainer(id: "1", users: updatedUsers)
+        var count = 0
+        var received: KeyedUserContainer?
+        
+        // when
+        let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
+        let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
+        persistence.save(object: container, mapper: saveMapper, update: .all)
+            .flatMap { [persistence] in
+                persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: {
+                count += 1
+                received = $0
+            })
+            .store(in: &subscriptions)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            self.persistence.updateAction { realm in
+                let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
+                list.usersList.append(DonainRealmPrimaryMapper().convert(model: newUser))
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+            .store(in: &self.subscriptions)
+        }
+        
+        // then
+        _ = XCTWaiter.wait(for: [.init()], timeout: 3)
+        XCTAssertEqual(count, 2)
+        XCTAssertEqual(resultContainer, received)
+    }
+    
+    func test_listenContainer_containerExistsBeforeStartListen_modify() {
+        // given
+        let users: [PrimaryKeyUser] = [createUser(id: "1", name: "1"), createUser(id: "2", name: "2")]
+        let container = KeyedUserContainer(id: "1", users: users)
+        var modifiedUsers = users
+        modifiedUsers[0].name = "updated \(modifiedUsers[0].name)"
+        let resultContainer = KeyedUserContainer(id: "1", users: modifiedUsers)
+        var count = 0
+        var received: KeyedUserContainer?
+        
+        // when
+        let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
+        let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
+        persistence.save(object: container, mapper: saveMapper, update: .all)
+            .flatMap { [persistence] in
+                persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: {
+                count += 1
+                received = $0
+            })
+            .store(in: &subscriptions)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            self.persistence.updateAction { realm in
+                let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
+                let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[0].id))!
+                let realmUser = DonainRealmPrimaryMapper().convert(model: modifiedUsers[0])
+                let obj = realm.create(RealmPrimaryKeyUser.self, value: realmUser, update: .all)
+                list.usersList[index] = obj
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+            .store(in: &self.subscriptions)
+        }
+        
+        // then
+        _ = XCTWaiter.wait(for: [.init()], timeout: 3)
+        XCTAssertEqual(count, 2)
+        XCTAssertEqual(resultContainer, received)
+    }
+    
+    func test_listenContainer_containerExistsBeforeStartListen_delete() {
+        // given
+        let users: [PrimaryKeyUser] = [createUser(id: "1", name: "1"), createUser(id: "2", name: "2")]
+        let container = KeyedUserContainer(id: "1", users: users)
+        let updatedUsers = Array(users.dropLast())
+        let resultContainer = KeyedUserContainer(id: "1", users: updatedUsers)
+        var count = 0
+        var received: KeyedUserContainer?
+        
+        // when
+        let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
+        let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
+        persistence.save(object: container, mapper: saveMapper, update: .all)
+            .flatMap { [persistence] in
+                persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: {
+                count += 1
+                received = $0
+            })
+            .store(in: &subscriptions)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            self.persistence.updateAction { realm in
+                let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
+                let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[1].id))!
+                list.usersList.remove(at: index)
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+            .store(in: &self.subscriptions)
+        }
+        
+        // then
+        _ = XCTWaiter.wait(for: [.init()], timeout: 3)
+        XCTAssertEqual(count, 2)
+        XCTAssertEqual(resultContainer, received)
+    }
+    
+    // MARK: Listen container before create
+    
+    func test_listenContainer_containerNotExistsBeforeStartListen() {
+        // given
+        let users: [PrimaryKeyUser] = [createUser(id: "1", name: "1"), createUser(id: "2", name: "2")]
+        let container = KeyedUserContainer(id: "1", users: users)
+        var count = 0
+        var received: KeyedUserContainer?
+        let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
+        let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
+        
+        persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+            .sink(receiveCompletion: { _ in }, receiveValue: {
+                count += 1
+                received = $0
+            })
+            .store(in: &subscriptions)
+        
+        // when
+        Just(())
+            .delay(for: 1, scheduler: RunLoop.main)
+            .flatMap { [persistence] in
+                persistence!.save(object: container, mapper: saveMapper, update: .all)
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in
+                print("here")
+            })
+            .store(in: &subscriptions)
+        
+        // then
+        _ = XCTWaiter.wait(for: [.init()], timeout: 2)
+        XCTAssertEqual(count, 1)
+        XCTAssertEqual(container, received)
+    }
+    
+    func test_listenContainer_containerNotExistsBeforeStartListen_addNew() {
+        // given
+        let users: [PrimaryKeyUser] = [createUser(id: "1", name: "1"), createUser(id: "2", name: "2")]
+        let container = KeyedUserContainer(id: "1", users: users)
+        let newUser = createUser(id: "3", name: "3")
+        let updatedUsers = users + [newUser]
+        let resultContainer = KeyedUserContainer(id: "1", users: updatedUsers)
+        var count = 0
+        var received: KeyedUserContainer?
+        let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
+        let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
+        
+        persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+            .sink(receiveCompletion: { _ in }, receiveValue: {
+                count += 1
+                received = $0
+            })
+            .store(in: &subscriptions)
+        
+        // when
+        persistence.save(object: container, mapper: saveMapper, update: .all)
+            .flatMap { [persistence] in
+                persistence!.updateAction { realm in
+                    let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
+                    list.usersList.append(DonainRealmPrimaryMapper().convert(model: newUser))
+                }
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+            .store(in: &subscriptions)
+        
+        // then
+        _ = XCTWaiter.wait(for: [.init()], timeout: 2)
+        XCTAssertEqual(count, 2)
+        XCTAssertEqual(resultContainer, received)
+    }
+    
+    func test_listenContainer_containerNotExistsBeforeStartListen_modify() {
+        // given
+        let users: [PrimaryKeyUser] = [createUser(id: "1", name: "1"), createUser(id: "2", name: "2")]
+        let container = KeyedUserContainer(id: "1", users: users)
+        var modifiedUsers = users
+        modifiedUsers[0].name = "updated \(modifiedUsers[0].name)"
+        let resultContainer = KeyedUserContainer(id: "1", users: modifiedUsers)
+        var count = 0
+        var received: KeyedUserContainer?
+        let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
+        let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
+        
+        persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+            .sink(receiveCompletion: { _ in }, receiveValue: {
+                count += 1
+                received = $0
+            })
+            .store(in: &subscriptions)
+        
+        // when
+        
+        persistence.save(object: container, mapper: saveMapper, update: .all)
+            .flatMap { [persistence] in
+                persistence!.updateAction { realm in
+                    let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
+                    let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[0].id))!
+                    let realmUser = DonainRealmPrimaryMapper().convert(model: modifiedUsers[0])
+                    let obj = realm.create(RealmPrimaryKeyUser.self, value: realmUser, update: .all)
+                    list.usersList[index] = obj
+                }
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+            .store(in: &subscriptions)
+        
+        // then
+        _ = XCTWaiter.wait(for: [.init()], timeout: 2)
+        XCTAssertEqual(count, 2)
+        XCTAssertEqual(resultContainer, received)
+    }
+    
+    func test_listenContainer_containerNotExistsBeforeStartListen_delete() {
+        // given
+        let users: [PrimaryKeyUser] = [createUser(id: "1", name: "1"), createUser(id: "2", name: "2")]
+        let container = KeyedUserContainer(id: "1", users: users)
+        let updatedUsers = Array(users.dropLast())
+        let resultContainer = KeyedUserContainer(id: "1", users: updatedUsers)
+        var count = 0
+        var received: KeyedUserContainer?
+        let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
+        let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
+        
+        persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+            .sink(receiveCompletion: { _ in }, receiveValue: {
+                count += 1
+                received = $0
+            })
+            .store(in: &subscriptions)
+        
+        // when
+        persistence.save(object: container, mapper: saveMapper, update: .all)
+            .flatMap { [persistence] in
+                persistence!.updateAction { realm in
+                    let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
+                    let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[1].id))!
+                    list.usersList.remove(at: index)
+                }
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+            .store(in: &subscriptions)
+        
+        // then
+        _ = XCTWaiter.wait(for: [.init()], timeout: 2)
+        XCTAssertEqual(count, 2)
+        XCTAssertEqual(resultContainer, received)
+    }
         
     private func createUser(id: String = "\(UUID().hashValue)",  name: String = UUID().uuidString, age: Int = .random(in: 10...80)) -> PrimaryKeyUser {
         return PrimaryKeyUser(id: id, name: name, age: age)
