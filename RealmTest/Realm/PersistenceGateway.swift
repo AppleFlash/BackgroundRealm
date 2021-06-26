@@ -166,6 +166,8 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
         return realm(scheduler: RunLoop.main)
             .map { $0.objects(M.PersistenceModel.self) }
             .flatMap(\.collectionPublisher)
+            .threadSafeReference()
+            .receive(on: scheduler)
             .map { results -> [M.PersistenceModel] in
                 let items = filterBlock(results)
                 // Если range существует - получаем слайс из коллекции, иначе берём коллекцию целиком

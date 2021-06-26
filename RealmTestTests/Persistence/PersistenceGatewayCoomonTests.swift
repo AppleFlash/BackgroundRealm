@@ -169,4 +169,107 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         XCTAssertNotNil(isReceiveOnMain)
         XCTAssertFalse(isReceiveOnMain ?? true)
     }
+    
+    func test_listenObject_receiveOnBackgroundThread() {
+        // when
+        XCTAssert(Thread.isMainThread)
+        let object = DumbObject(field: 1)
+        let expect = expectation(description: "save")
+        var isReceiveOnMain: Bool?
+        
+        // given
+        persistence.save(object: object, mapper: DonainRealmDumbObjectMapper())
+            .flatMap { [persistence] in
+                persistence!.listen(mapper: RealmDomainDumbObjectMapper()) { $0.filter("field = %@", object.field) }
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in
+                isReceiveOnMain = Thread.isMainThread
+                expect.fulfill()
+            })
+            .store(in: &subscriptions)
+        
+        // then
+        
+        waitForExpectations(timeout: 2)
+        XCTAssertNotNil(isReceiveOnMain)
+        XCTAssertFalse(isReceiveOnMain ?? true)
+    }
+    
+    func test_listenArray_receiveOnBackgroundThread() {
+        // when
+        XCTAssert(Thread.isMainThread)
+        let object = DumbObject(field: 1)
+        let expect = expectation(description: "save")
+        var isReceiveOnMain: Bool?
+        
+        // given
+        persistence.save(object: object, mapper: DonainRealmDumbObjectMapper())
+            .flatMap { [persistence] in
+                persistence!.listenArray(mapper: RealmDomainDumbObjectMapper())
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in
+                isReceiveOnMain = Thread.isMainThread
+                expect.fulfill()
+            })
+            .store(in: &subscriptions)
+        
+        // then
+        
+        waitForExpectations(timeout: 2)
+        XCTAssertNotNil(isReceiveOnMain)
+        XCTAssertFalse(isReceiveOnMain ?? true)
+    }
+    
+    func test_listenChangeset_receiveOnBackgroundThread() {
+        // when
+        XCTAssert(Thread.isMainThread)
+        let object = DumbObject(field: 1)
+        let expect = expectation(description: "save")
+        var isReceiveOnMain: Bool?
+        
+        // given
+        persistence.save(object: object, mapper: DonainRealmDumbObjectMapper())
+            .flatMap { [persistence] in
+                persistence!.listenArrayChangesSet(mapper: RealmDomainDumbObjectMapper()) { $0.filter("field = %@", object.field) }
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in
+                isReceiveOnMain = Thread.isMainThread
+                expect.fulfill()
+            })
+            .store(in: &subscriptions)
+        
+        // then
+        
+        waitForExpectations(timeout: 2)
+        XCTAssertNotNil(isReceiveOnMain)
+        XCTAssertFalse(isReceiveOnMain ?? true)
+    }
+    
+    func test_listenOrderedChangeset_receiveOnBackgroundThread() {
+        // when
+        XCTAssert(Thread.isMainThread)
+        let object = KeyedUserContainer(id: "1", users: [])
+        let expect = expectation(description: "save")
+        var isReceiveOnMain: Bool?
+        
+        // given
+        let realmMapper = RealmDomainPrimaryMapper()
+        persistence.save(object: object, mapper: DomainRealmUsersKeyedContainerMapper(userMapper: DonainRealmPrimaryMapper()) )
+            .flatMap { [persistence] in
+                persistence!.listenOrderedArrayChanges(
+                    RealmDomainKeyedUserContainerMapper.self,
+                    mapper: realmMapper) { $0.filter("id = %@", "1").first?.usersList }
+            }
+            .sink(receiveCompletion: { _ in }, receiveValue: { _ in
+                isReceiveOnMain = Thread.isMainThread
+                expect.fulfill()
+            })
+            .store(in: &subscriptions)
+        
+        // then
+        
+        waitForExpectations(timeout: 2)
+        XCTAssertNotNil(isReceiveOnMain)
+        XCTAssertFalse(isReceiveOnMain ?? true)
+    }
 }
