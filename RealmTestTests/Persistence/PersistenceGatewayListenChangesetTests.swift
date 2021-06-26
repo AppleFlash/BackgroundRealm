@@ -397,7 +397,8 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
         let realmMapper = RealmDomainPrimaryMapper()
         
         let expectedListBeforeUpdate = Array(startUsers[0...4]) + Array(startUsers[10...]) + usersToInsert
-        let idsToModify = [0, 3, 4, 12, 14, 16, 18]
+//        let idsToModify = [0, 3, 4, 12, 14, 16, 18]
+        let idsToModify = [0, 1, 2, 3, 4, 5, 6]
         var usersToModified = idsToModify.map { expectedListBeforeUpdate[$0] }
         for index in 0..<usersToModified.count {
             usersToModified[index].name += " modified"
@@ -435,6 +436,124 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
                     realm.add(objectsToInsert, update: .all)
                     let objectsToModify = usersToModified.map(domainMapper.convert)
                     realm.add(objectsToModify, update: .modified)
+                }
+            }
+            .sink(receiveCompletion: { _ in }) { _ in }
+            .store(in: &subscriptions)
+        
+        // then
+        waitForExpectations(timeout: 5)
+        XCTAssertEqual(resultUsersList, expectedUsersList)
+    }
+    
+    func test_listenOrderedArrayChangeset_modify() {
+        // given
+        let firstUser = createSameConfigUser(age: 0)
+        let secondUser = createSameConfigUser(age: 1)
+        let users = [firstUser, secondUser]
+        var modifiedUsers = users
+        modifiedUsers[0].name = "updated \(modifiedUsers[0].name)"
+        
+        let container = KeyedUserContainer(id: "1", users: users)
+        let domainMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
+        let realmMapper = RealmDomainPrimaryMapper()
+        
+        let expectedUsersList = modifiedUsers
+        var resultUsersList: [PrimaryKeyUser] = []
+        
+        persistence.listenOrderedArrayChanges(
+            RealmDomainKeyedUserContainerMapper.self,
+            mapper: realmMapper) { res in
+            res.filter("id = %@", "1").first?.usersList
+        }
+        .sink(receiveCompletion: { _ in }, receiveValue: { changeset in
+            apply(changeset: changeset, to: &resultUsersList)
+        })
+        .store(in: &subscriptions)
+        
+        // when
+        Just(())
+            .flatMap { [persistence] in
+                persistence!.save(object: container, mapper: domainMapper)
+            }
+            .delay(for: 1, scheduler: RunLoop.main)
+            .flatMap { [persistence] in
+                persistence!.updateAction { realm in
+                    let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
+                    let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[0].id))!
+                    let realmUser = DonainRealmPrimaryMapper().convert(model: modifiedUsers[0])
+                    let obj = realm.create(RealmPrimaryKeyUser.self, value: realmUser, update: .all)
+                    list.usersList[index] = obj
+                }
+            }
+            .sink(receiveCompletion: { _ in }) { _ in }
+            .store(in: &subscriptions)
+        
+        // then
+        _ = XCTWaiter.wait(for: [.init()], timeout: 2)
+        XCTAssertEqual(resultUsersList, expectedUsersList)
+    }
+    
+    func test_listenOrderedArrayChangeset_aLotUpdates2_success() {
+        // given
+        let startUsers = (0..<20).map(createSameConfigUser)
+        let idsToDelete = (5..<10).map { $0 }
+        let usersToInsert = (21..<25).map(createSameConfigUser)
+        
+        let container = KeyedUserContainer(id: "1", users: startUsers)
+        
+        let expect = expectation(description: "listen.aLotUpdates2")
+        let domainMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
+        let realmMapper = RealmDomainPrimaryMapper()
+        
+        let expectedListBeforeUpdate = Array(startUsers[0...4]) + Array(startUsers[10...]) + usersToInsert
+//        let idsToModify = [0, 3, 4, 12, 14, 16, 18]
+//        let idsToModify = [10, 11, 12, 13, 14, 15, 16]
+        let idsToModify = [0, 1, 2, 3, 4, 5, 6]
+        var usersToModified = idsToModify.map { expectedListBeforeUpdate[$0] }
+        for index in 0..<usersToModified.count {
+            usersToModified[index].name += " modified"
+        }
+        
+        var expectedUsersList = Array(startUsers[0...4]) + Array(startUsers[10...]) + usersToInsert
+        idsToModify.enumerated().forEach { offset, item in
+            expectedUsersList[item] = usersToModified[offset]
+        }
+        
+        var resultUsersList: [PrimaryKeyUser] = []
+        var callCount = 0
+        
+        persistence.save(object: container, mapper: domainMapper)
+            .flatMap { [persistence] in
+                persistence!.listenOrderedArrayChanges(RealmDomainKeyedUserContainerMapper.self, mapper: realmMapper) { result in
+                    result.filter("id = %@", "1").first?.usersList
+                }
+            }
+            .sink(receiveCompletion: { _ in }) { receivedChangeset in
+                apply(changeset: receivedChangeset, to: &resultUsersList)
+                callCount += 1
+                if callCount == 2 {
+                    expect.fulfill()
+                }
+            }
+            .store(in: &subscriptions)
+        
+        // when
+        Just(())
+            .delay(for: 1, scheduler: RunLoop.main)
+            .flatMap { [persistence] in
+                persistence!.updateAction { realm in
+                    let mapper = DonainRealmPrimaryMapper()
+                    let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
+                    list.usersList.remove(atOffsets: .init(idsToDelete))
+        
+                    let objectsToInsert = usersToInsert.map(mapper.convert).map { realm.create(RealmPrimaryKeyUser.self, value: $0, update: .all) }
+                    list.usersList.append(objectsIn: objectsToInsert)
+                    
+                    let objectsToModify = usersToModified.map(mapper.convert).map { realm.create(RealmPrimaryKeyUser.self, value: $0, update: .all) }
+                    zip(idsToModify, objectsToModify).forEach { mod, obj in
+                        list.usersList[mod] = obj
+                    }
                 }
             }
             .sink(receiveCompletion: { _ in }) { _ in }

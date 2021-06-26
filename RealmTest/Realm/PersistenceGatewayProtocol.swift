@@ -53,6 +53,12 @@ protocol PersistenceGatewayProtocol: AnyObject {
         filterBlock: @escaping GetResultBlock<M>
     ) -> AnyPublisher<PersistenceChangeset<M.DomainModel, Error>, Error>
     
+    func listenOrderedArrayChanges<Source: PersistenceToDomainMapper, Target: PersistenceToDomainMapper>(
+        _ sourceType: Source.Type,
+        mapper: Target,
+        filterBlock: @escaping (Results<Source.PersistenceModel>) -> List<Target.PersistenceModel>?
+    ) -> AnyPublisher<PersistenceChangeset<Target.DomainModel, Error>, Error>
+    
     /// Сохраняет объект в базу
     /// - Parameters:
     ///   - object: объект для сохранения

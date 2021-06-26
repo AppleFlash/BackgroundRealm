@@ -53,6 +53,8 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
             .map { $0.objects(M.PersistenceModel.self) } // Получает список объектов для типа
             .map { filterBlock($0) } // Фильтрует список объектов для получения только интересующего объекта
             .flatMap(\.collectionPublisher) // Наблюдает за изменением фильтрованных объектов
+            .threadSafeReference()
+            .receive(on: scheduler)
             .compactMap { $0.last } // Результат может содержать массив объектов, если поиск осуществлялся не по primary key, либо, если primary key нет вовсе.
                                     // Для обработки ситуации, когда нет primary key берется `last`, а не `first`
             .map(mapper.convert)
@@ -66,28 +68,20 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
         return realm(scheduler: RunLoop.main)
             .map { $0.objects(M.PersistenceModel.self) }
             .flatMap { filterBlock($0).changesetPublisher }
+            .threadSafeReference()
+            .receive(on: scheduler)
             .map { changeset in
                 switch changeset {
                 case let .initial(objects):
                     return .initial(objects.map(mapper.convert))
                     
                 case let .update(objects, deletions, insertions, modifications):
-                    var nModifications: [Int] = []
-                    // Если есть индексы удалённых или добавленных объектов, то нужно скорректировать индексы модификации, т.к. они сдвинуты
-                    // Для этого отнимаем кол-во удаленых индексов, которые меньше либо равны каждому индексу модификации
-                    // и прибавляем кол-во добавленных индексов, которые меньше либо равны каждому индексу модификации
-                    if !deletions.isEmpty || !insertions.isEmpty {
-                        for modIndex in modifications {
-                            let deletesLessThenMod = deletions.filter { $0 <= modIndex }.count
-                            let insertsGreaterThenMode = insertions.filter { $0 <= modIndex }.count
-                            var newMod = max(0, modIndex - deletesLessThenMod)
-                            newMod = min(objects.count - 1, newMod + insertsGreaterThenMode)
-                            nModifications.append(newMod)
-                        }
-                    } else {
-                        nModifications = modifications
-                    }
-                    
+                    let nModifications = self.handleModifications(
+                        objectsCount: objects.count,
+                        deletions: deletions,
+                        insertions: insertions,
+                        modifications: modifications
+                    )
                     let inserted = insertions.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
                     let modified = nModifications.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
 
@@ -98,6 +92,70 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
                 }
             }
             .eraseToAnyPublisher()
+    }
+    
+    func listenOrderedArrayChanges<Source: PersistenceToDomainMapper, Target: PersistenceToDomainMapper>(
+        _ sourceType: Source.Type,
+        mapper: Target,
+        filterBlock: @escaping (Results<Source.PersistenceModel>) -> List<Target.PersistenceModel>?
+    ) -> AnyPublisher<PersistenceChangeset<Target.DomainModel, Error>, Error> {
+        return realm(scheduler: RunLoop.main)
+            .map { $0.objects(Source.PersistenceModel.self) }
+            .flatMap {
+                $0.collectionPublisher
+                    .filter { !$0.isEmpty }
+                    .prefix(1)
+            }
+            .compactMap { filterBlock($0) }
+            .flatMap { $0.changesetPublisher }
+            .threadSafeReference()
+            .receive(on: scheduler)
+            .map { [unowned self] changeset in
+                switch changeset {
+                case let .initial(objects):
+                    return .initial(objects.map(mapper.convert))
+
+                case let .update(objects, deletions, insertions, modifications):
+                    let nModifications = self.handleModifications(
+                        objectsCount: objects.count,
+                        deletions: deletions,
+                        insertions: insertions,
+                        modifications: modifications
+                    )
+                    let inserted = insertions.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
+                    let modified = nModifications.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
+
+                    return .update(deleted: deletions, inserted: inserted, modified: modified)
+
+                case let .error(error):
+                    return .error(error)
+                }
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    private func handleModifications(
+        objectsCount: Int,
+        deletions: [Int],
+        insertions: [Int],
+        modifications: [Int]
+    ) -> [Int] {
+        var nModifications: [Int] = []
+        // Если есть индексы удалённых или добавленных объектов, то нужно скорректировать индексы модификации, т.к. они сдвинуты
+        // Для этого отнимаем кол-во удаленых индексов, которые меньше либо равны каждому индексу модификации
+        // и прибавляем кол-во добавленных индексов, которые меньше либо равны каждому индексу модификации
+        if !deletions.isEmpty || !insertions.isEmpty {
+            for modIndex in modifications {
+                let deletesLessThenMod = deletions.filter { $0 <= modIndex }.count
+                let insertsGreaterThenMode = insertions.filter { $0 <= modIndex }.count
+                var newMod = max(0, modIndex - deletesLessThenMod)
+                newMod = min(objectsCount - 1, newMod + insertsGreaterThenMode)
+                nModifications.append(newMod)
+            }
+        } else {
+            nModifications = modifications
+        }
+        return nModifications
     }
     
     func listenArray<M: PersistenceToDomainMapper>(
