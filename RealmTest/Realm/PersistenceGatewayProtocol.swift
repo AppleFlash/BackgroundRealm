@@ -48,16 +48,17 @@ protocol PersistenceGatewayProtocol: AnyObject {
     /// - Parameters:
     ///   - mapper: маппер для конвертации объектов рилма в доменные объекты
     ///   - filterBlock: фильтр, который является основным инструментом поиска нужных элементов
-    func listenArrayChangesSet<M: PersistenceToDomainMapper>(
-        mapper: M,
-        filterBlock: @escaping GetResultBlock<M>
-    ) -> AnyPublisher<PersistenceChangeset<M.DomainModel, Error>, Error>
+//    func listenArrayChangesSet<M: PersistenceToDomainMapper>(
+//        mapper: M,
+//        filterBlock: @escaping GetResultBlock<M>
+//    ) -> AnyPublisher<PersistenceChangeset<M.DomainModel, Error>, Error>
     
     func listenOrderedArrayChanges<Source: PersistenceToDomainMapper, Target: PersistenceToDomainMapper>(
         _ sourceType: Source.Type,
         mapper: Target,
-        filterBlock: @escaping (Results<Source.PersistenceModel>) -> List<Target.PersistenceModel>?
-    ) -> AnyPublisher<PersistenceChangeset<Target.DomainModel, Error>, Error>
+        filterBlock: @escaping (Results<Source.PersistenceModel>) -> List<Target.PersistenceModel>?,
+		comparator: @escaping (Target.DomainModel, Target.DomainModel) -> Bool
+	) -> AnyPublisher<PersistenceChangeset<Target.DomainModel>, Error>
     
     /// Сохраняет объект в базу
     /// - Parameters:

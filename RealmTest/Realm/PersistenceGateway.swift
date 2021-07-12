@@ -61,78 +61,131 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
             .eraseToAnyPublisher()
     }
     
-    func listenArrayChangesSet<M: PersistenceToDomainMapper>(
-        mapper: M,
-        filterBlock: @escaping GetResultBlock<M>
-    ) -> AnyPublisher<PersistenceChangeset<M.DomainModel, Error>, Error> {
-        return realm(scheduler: RunLoop.main)
-            .map { $0.objects(M.PersistenceModel.self) }
-            .flatMap { filterBlock($0).changesetPublisher }
-            .threadSafeReference()
-            .receive(on: scheduler)
-            .map { changeset in
-                switch changeset {
-                case let .initial(objects):
-                    return .initial(objects.map(mapper.convert))
-                    
-                case let .update(objects, deletions, insertions, modifications):
-                    let nModifications = self.handleModifications(
-                        objectsCount: objects.count,
-                        deletions: deletions,
-                        insertions: insertions,
-                        modifications: modifications
-                    )
-                    let inserted = insertions.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
-                    let modified = nModifications.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
-
-                    return .update(deleted: deletions, inserted: inserted, modified: modified)
-                    
-                case let .error(error):
-                    return .error(error)
-                }
-            }
-            .eraseToAnyPublisher()
-    }
+//    func listenArrayChangesSet<M: PersistenceToDomainMapper>(
+//        mapper: M,
+//        filterBlock: @escaping GetResultBlock<M>
+//    ) -> AnyPublisher<PersistenceChangeset<M.DomainModel, Error>, Error> {
+//        return realm(scheduler: RunLoop.main)
+//            .map { $0.objects(M.PersistenceModel.self) }
+//            .flatMap { filterBlock($0).changesetPublisher }
+//            .threadSafeReference()
+//            .receive(on: scheduler)
+//            .map { changeset in
+//                switch changeset {
+//                case let .initial(objects):
+//                    return .initial(objects.map(mapper.convert))
+//                    
+//                case let .update(objects, deletions, insertions, modifications):
+//                    let nModifications = self.handleModifications(
+//                        objectsCount: objects.count,
+//                        deletions: deletions,
+//                        insertions: insertions,
+//                        modifications: modifications
+//                    )
+//                    let inserted = insertions.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
+//                    let modified = nModifications.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
+//
+//                    return .update(deleted: deletions, inserted: inserted, modified: modified)
+//                    
+//                case let .error(error):
+//                    return .error(error)
+//                }
+//            }
+//            .eraseToAnyPublisher()
+//    }
     
-    func listenOrderedArrayChanges<Source: PersistenceToDomainMapper, Target: PersistenceToDomainMapper>(
-        _ sourceType: Source.Type,
-        mapper: Target,
-        filterBlock: @escaping (Results<Source.PersistenceModel>) -> List<Target.PersistenceModel>?
-    ) -> AnyPublisher<PersistenceChangeset<Target.DomainModel, Error>, Error> {
-        return realm(scheduler: RunLoop.main)
-            .map { $0.objects(Source.PersistenceModel.self) }
-            .flatMap {
-                $0.collectionPublisher
-                    .filter { !$0.isEmpty }
-                    .prefix(1)
-            }
-            .compactMap { filterBlock($0) }
-            .flatMap { $0.changesetPublisher }
-            .threadSafeReference()
-            .receive(on: scheduler)
-            .map { [unowned self] changeset in
-                switch changeset {
-                case let .initial(objects):
-                    return .initial(objects.map(mapper.convert))
-
-                case let .update(objects, deletions, insertions, modifications):
-                    let nModifications = self.handleModifications(
-                        objectsCount: objects.count,
-                        deletions: deletions,
-                        insertions: insertions,
-                        modifications: modifications
-                    )
-                    let inserted = insertions.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
-                    let modified = nModifications.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
-
-                    return .update(deleted: deletions, inserted: inserted, modified: modified)
-
-                case let .error(error):
-                    return .error(error)
-                }
-            }
-            .eraseToAnyPublisher()
-    }
+//    func listenOrderedArrayChanges<Source: PersistenceToDomainMapper, Target: PersistenceToDomainMapper>(
+//        _ sourceType: Source.Type,
+//        mapper: Target,
+//        filterBlock: @escaping (Results<Source.PersistenceModel>) -> List<Target.PersistenceModel>?
+//    ) -> AnyPublisher<PersistenceChangeset<Target.DomainModel>, Error> {
+//        return realm(scheduler: RunLoop.main)
+//            .map { $0.objects(Source.PersistenceModel.self) }
+//            .flatMap {
+//                $0.collectionPublisher
+//                    .filter { !$0.isEmpty }
+//                    .prefix(1)
+//            }
+//            .compactMap { filterBlock($0) }
+//            .flatMap { $0.changesetPublisher }
+//            .threadSafeReference()
+//            .receive(on: scheduler)
+//            .map { [unowned self] changeset in
+//                switch changeset {
+//                case let .initial(objects):
+//                    return .initial(objects.map(mapper.convert))
+//
+//                case let .update(objects, deletions, insertions, modifications):
+//                    let nModifications = self.handleModifications(
+//                        objectsCount: objects.count,
+//                        deletions: deletions,
+//                        insertions: insertions,
+//                        modifications: modifications
+//                    )
+//                    let inserted = insertions.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
+//                    let modified = nModifications.map { ChangesetItem(index: $0, item: mapper.convert(persistence: objects[$0])) }
+//
+//                    return .update(deleted: deletions, inserted: inserted, modified: modified)
+//
+//                case let .error(error):
+//                    return .error(error)
+//                }
+//            }
+//            .eraseToAnyPublisher()
+//    }
+	
+//	func listenOrderedArrayChanges<Source: PersistenceToDomainMapper, Target: PersistenceToDomainMapper>(
+//		_ sourceType: Source.Type,
+//		mapper: Target,
+//		filterBlock: @escaping (Results<Source.PersistenceModel>) -> List<Target.PersistenceModel>?,
+//		comparator: @escaping (Target.PersistenceModel, Target.PersistenceModel) -> Bool
+//	) -> AnyPublisher<PersistenceChangeset<Target.DomainModel>, Error> {
+//		return realm(scheduler: RunLoop.main)
+//			.map { $0.objects(Source.PersistenceModel.self) }
+//			.flatMap {
+//				$0.collectionPublisher
+//					.filter { !$0.isEmpty }
+//					.prefix(1)
+//			}
+//			.compactMap { filterBlock($0) }
+//			.flatMap(\.collectionPublisher)
+//			.threadSafeReference()
+//			.receive(on: scheduler)
+//			.map(Array.init)
+//			.diff(comparator: comparator)
+//			.map { difference -> PersistenceChangeset<Target.DomainModel> in
+//				switch difference {
+//				case let .initial(objects):
+//					return .initial(objects.map(mapper.convert))
+//				case let .update(deleted, inserted):
+//					let domainInserted = inserted.map { ChangesetItem(index: $0.index, item: mapper.convert(persistence: $0.item)) }
+//					return .update(deleted: deleted, inserted: domainInserted)
+//				}
+//			}
+//			.eraseToAnyPublisher()
+//	}
+	
+	func listenOrderedArrayChanges<Source: PersistenceToDomainMapper, Target: PersistenceToDomainMapper>(
+		_ sourceType: Source.Type,
+		mapper: Target,
+		filterBlock: @escaping (Results<Source.PersistenceModel>) -> List<Target.PersistenceModel>?,
+		comparator: @escaping (Target.DomainModel, Target.DomainModel) -> Bool
+	) -> AnyPublisher<PersistenceChangeset<Target.DomainModel>, Error> {
+		return realm(scheduler: RunLoop.main)
+			.map { $0.objects(Source.PersistenceModel.self) }
+			.flatMap {
+				$0.collectionPublisher
+					.filter { !$0.isEmpty }
+					.prefix(1)
+			}
+			.compactMap { filterBlock($0) }
+			.flatMap(\.collectionPublisher)
+			.threadSafeReference()
+			.receive(on: scheduler)
+			.map { $0.map(mapper.convert) }
+			.diff(comparator: comparator)
+			.eraseToAnyPublisher()
+	}
     
     private func handleModifications(
         objectsCount: Int,
