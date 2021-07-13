@@ -43,16 +43,6 @@ protocol PersistenceGatewayProtocol: AnyObject {
         filterBlock: @escaping GetResultBlock<M>
     ) -> AnyPublisher<[M.DomainModel], Error>
     
-    /// Наблюдает за изменением массива объектов и возвращает информацию об изменении (начало, обновление, удаление, вставка).
-    /// Наблюдение будет валидно, даже, если объекты не существовали на момент начала наблюдение и появились после
-    /// - Parameters:
-    ///   - mapper: маппер для конвертации объектов рилма в доменные объекты
-    ///   - filterBlock: фильтр, который является основным инструментом поиска нужных элементов
-//    func listenArrayChangesSet<M: PersistenceToDomainMapper>(
-//        mapper: M,
-//        filterBlock: @escaping GetResultBlock<M>
-//    ) -> AnyPublisher<PersistenceChangeset<M.DomainModel, Error>, Error>
-    
     func listenOrderedArrayChanges<Source: PersistenceToDomainMapper, Target: PersistenceToDomainMapper>(
         _ sourceType: Source.Type,
         mapper: Target,
