@@ -82,6 +82,18 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
 			.diff(comparator: comparator)
 			.eraseToAnyPublisher()
 	}
+	
+	func listenOrderedArrayChanges<Source: PersistenceToDomainMapper, Target: PersistenceToDomainMapper>(
+		_ sourceType: Source.Type,
+		mapper: Target,
+		filterBlock: @escaping (Results<Source.PersistenceModel>) -> List<Target.PersistenceModel>?
+	) -> AnyPublisher<PersistenceChangeset<Target.DomainModel>, Error> where Target.DomainModel: Equatable {
+		listenOrderedArrayChanges(
+			sourceType,
+			mapper: mapper,
+			filterBlock: filterBlock
+		) { $0 == $1 }
+	}
     
     func listenArray<M: PersistenceToDomainMapper>(
         mapper: M,

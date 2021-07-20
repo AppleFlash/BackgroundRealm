@@ -49,6 +49,12 @@ protocol PersistenceGatewayProtocol: AnyObject {
         filterBlock: @escaping (Results<Source.PersistenceModel>) -> List<Target.PersistenceModel>?,
 		comparator: @escaping (Target.DomainModel, Target.DomainModel) -> Bool
 	) -> AnyPublisher<PersistenceChangeset<Target.DomainModel>, Error>
+	
+	func listenOrderedArrayChanges<Source: PersistenceToDomainMapper, Target: PersistenceToDomainMapper>(
+		_ sourceType: Source.Type,
+		mapper: Target,
+		filterBlock: @escaping (Results<Source.PersistenceModel>) -> List<Target.PersistenceModel>?
+	) -> AnyPublisher<PersistenceChangeset<Target.DomainModel>, Error> where Target.DomainModel: Equatable
     
     /// Сохраняет объект в базу
     /// - Parameters:

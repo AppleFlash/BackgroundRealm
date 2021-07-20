@@ -45,8 +45,7 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
                 persistence!.listenOrderedArrayChanges(
 					RealmDomainKeyedUserContainerMapper.self,
 					mapper: realmMapper,
-					filterBlock: { $0.first?.usersList },
-					comparator: { $0 == $1 }
+					filterBlock: { $0.first?.usersList }
 				)
             }
             .sink(receiveCompletion: { _ in }) { receivedChangeset in
@@ -84,8 +83,7 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
 		persistence.listenOrderedArrayChanges(
 			RealmDomainKeyedUserContainerMapper.self,
 			mapper: realmMapper,
-			filterBlock: { $0.filter("id = %@", "1").first?.usersList },
-			comparator: { $0 == $1 }
+			filterBlock: { $0.filter("id = %@", "1").first?.usersList }
 		)
         .sink(receiveCompletion: { _ in }, receiveValue: { changeset in
             apply(changeset: changeset, to: &resultUsersList)
@@ -159,8 +157,7 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
 				persistence!.listenOrderedArrayChanges(
 					RealmDomainKeyedUserContainerMapper.self,
 					mapper: realmMapper,
-					filterBlock: { $0.filter("id = %@", "1").first?.usersList },
-					comparator: { $0 == $1 }
+					filterBlock: { $0.filter("id = %@", "1").first?.usersList }
 				)
 			}
 			.sink(receiveCompletion: { _ in }) { receivedChangeset in
