@@ -120,16 +120,14 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
     func save<M: ObjectToPersistenceMapper>(object: M.Model, mapper: M, update: Realm.UpdatePolicy) -> AnySinglePublisher<Void, Error> {
         return realm(scheduler: scheduler)
             .tryMap { realm in
-                try autoreleasepool {
-                    let persistence = mapper.convert(model: object)
-                    let hasPrimaryKey = M.PersistenceModel.primaryKey() != nil
-                    
-                    try realm.write {
-                        hasPrimaryKey ? realm.add(persistence, update: update) : realm.add(persistence)
-                    }
-                    
-                    return ()
-                }
+				let persistence = mapper.convert(model: object)
+				let hasPrimaryKey = M.PersistenceModel.primaryKey() != nil
+				
+				try realm.safeWrite {
+					hasPrimaryKey ? realm.add(persistence, update: update) : realm.add(persistence)
+				}
+				
+				return ()
             }
             .eraseToAnySinglePublisher()
     }
@@ -137,16 +135,14 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
     func save<M: ObjectToPersistenceMapper>(objects: [M.Model], mapper: M, update: Realm.UpdatePolicy) -> AnySinglePublisher<Void, Error> {
         return realm(scheduler: scheduler)
             .tryMap { realm in
-                try autoreleasepool {
-                    let persistenceObjects = objects.map(mapper.convert)
-                    let hasPrimaryKey = M.PersistenceModel.primaryKey() != nil
-                    
-                    try realm.write {
-                        hasPrimaryKey ? realm.add(persistenceObjects, update: update) : realm.add(persistenceObjects)
-                    }
-                    
-                    return ()
-                }
+				let persistenceObjects = objects.map(mapper.convert)
+				let hasPrimaryKey = M.PersistenceModel.primaryKey() != nil
+				
+				try realm.safeWrite {
+					hasPrimaryKey ? realm.add(persistenceObjects, update: update) : realm.add(persistenceObjects)
+				}
+				
+				return ()
             }
             .eraseToAnySinglePublisher()
     }
@@ -156,16 +152,14 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
     func delete<M: ObjectToPersistenceMapper>(_ type: M.Type, deleteHandler: @escaping SaveResultBlock<M>) -> AnySinglePublisher<Void, Error> {
         return realm(scheduler: scheduler)
             .tryMap { realm in
-                try autoreleasepool {
-                    let objects = realm.objects(M.PersistenceModel.self)
-                    let toDelete = deleteHandler(objects)
-                    
-                    try realm.write {
-                        realm.delete(toDelete)
-                    }
-                    
-                    return ()
-                }
+				let objects = realm.objects(M.PersistenceModel.self)
+				let toDelete = deleteHandler(objects)
+				
+				try realm.safeWrite {
+					realm.delete(toDelete)
+				}
+				
+				return ()
             }
             .eraseToAnySinglePublisher()
     }
@@ -175,11 +169,9 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
     func updateAction(_ action: @escaping (Realm) -> Void) -> AnySinglePublisher<Void, Error> {
         return realm(scheduler: scheduler)
             .tryMap { realm in
-                try autoreleasepool {
-                    try realm.write {
-                        action(realm)
-                    }
-                }
+				try realm.safeWrite {
+					action(realm)
+				}
             }
             .eraseToAnySinglePublisher()
     }
@@ -190,4 +182,14 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
             .compactMap { filterBlock($0).count }
             .eraseToAnySinglePublisher()
     }
+}
+
+extension Realm {
+	func safeWrite(_ block: () -> Void) throws {
+		if isInWriteTransaction {
+			block()
+		} else {
+			try write(block)
+		}
+	}
 }
