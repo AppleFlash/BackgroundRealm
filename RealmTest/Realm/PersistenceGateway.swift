@@ -163,6 +163,13 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
             }
             .eraseToAnySinglePublisher()
     }
+	
+	func deleteAll() {
+		let realm = try! Realm(configuration: configuration)
+		try! realm.safeWrite {
+			realm.deleteAll()
+		}
+	}
     
     // MARK: Action
     

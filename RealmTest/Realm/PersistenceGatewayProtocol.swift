@@ -79,6 +79,8 @@ protocol PersistenceGatewayProtocol: AnyObject {
     ///   - type: тип объектов для определения количества
     ///   - filterBlock: блок фильтрации
     func count<T: ObjectToPersistenceMapper>(_ type: T.Type, filterBlock: @escaping SaveResultBlock<T>) -> AnySinglePublisher<Int, Error>
+	
+	func deleteAll()
 }
 
 extension PersistenceGatewayProtocol {

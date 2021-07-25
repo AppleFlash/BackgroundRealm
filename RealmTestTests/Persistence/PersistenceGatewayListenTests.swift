@@ -19,11 +19,12 @@ final class PersistenceGatewayListenTests: XCTestCase {
         super.setUp()
         
         let queue = DispatchQueue(label: "com.test.persistence.listen")
-        let config = Realm.Configuration(inMemoryIdentifier: "in memory listen test realm")
+        let config = Realm.Configuration(inMemoryIdentifier: "in memory listen test realm \(UUID().uuidString)")
         persistence = PersistenceGateway(scheduler: queue, configuration: config)
     }
     
     override func tearDown() {
+		persistence.deleteAll()
         persistence = nil
         subscriptions.removeAll()
         

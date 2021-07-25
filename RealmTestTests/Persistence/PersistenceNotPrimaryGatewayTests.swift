@@ -21,11 +21,12 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         super.setUp()
         
         let queue = DispatchQueue(label: "com.test.persistence.primary.not")
-        let config = Realm.Configuration(inMemoryIdentifier: "in memory not primary test realm")
+		let config = Realm.Configuration(inMemoryIdentifier: "in memory not primary test realm \(UUID().uuidString)")
         persistence = PersistenceGateway(scheduler: queue, configuration: config)
     }
     
     override func tearDown() {
+		persistence.deleteAll()
         persistence = nil
         subscriptions.removeAll()
         

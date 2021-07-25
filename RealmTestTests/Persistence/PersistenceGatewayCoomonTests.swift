@@ -48,11 +48,12 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         super.setUp()
         
         let queue = DispatchQueue(label: "com.test.persistence.common")
-        let config = Realm.Configuration(inMemoryIdentifier: "in memory common test realm")
+        let config = Realm.Configuration(inMemoryIdentifier: "in memory common test realm \(UUID().uuidString)")
         persistence = PersistenceGateway(scheduler: queue, configuration: config)
     }
     
     override func tearDown() {
+		persistence.deleteAll()
         persistence = nil
         subscriptions.removeAll()
         

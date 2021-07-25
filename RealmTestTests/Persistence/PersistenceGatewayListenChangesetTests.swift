@@ -19,11 +19,12 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
         super.setUp()
         
         let queue = DispatchQueue(label: "com.test.persistence.changeset")
-        let config = Realm.Configuration(inMemoryIdentifier: "in memory listen changeset test realm")
+        let config = Realm.Configuration(inMemoryIdentifier: "in memory listen changeset test realm \(UUID().uuidString)")
         persistence = PersistenceGateway(scheduler: queue, configuration: config)
     }
     
     override func tearDown() {
+		persistence.deleteAll()
         persistence = nil
         subscriptions.removeAll()
         
