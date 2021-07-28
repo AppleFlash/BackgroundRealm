@@ -11,7 +11,7 @@ import RealmSwift
 
 protocol PersistenceGatewayProtocol: AnyObject {
     /// Позволяет выполнять любое действие с рилмом. Все действия происходит в транзакции записи
-    func updateAction(_ action: @escaping (Realm) -> Void) -> AnySinglePublisher<Void, Error>
+	func updateAction(_ action: @escaping (Realm) throws -> Void) -> AnySinglePublisher<Void, Error>
     
     /// Получает объект из рилма
     /// - Parameters:

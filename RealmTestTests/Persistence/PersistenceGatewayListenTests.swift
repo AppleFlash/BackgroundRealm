@@ -251,7 +251,8 @@ final class PersistenceGatewayListenTests: XCTestCase {
         // when
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
-        persistence.save(object: container, mapper: saveMapper, update: .all)
+		let saveSubject = persistence.save(object: container, mapper: saveMapper, update: .all)
+        saveSubject
             .flatMap { [persistence] in
                 persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
             }
@@ -261,14 +262,15 @@ final class PersistenceGatewayListenTests: XCTestCase {
             })
             .store(in: &subscriptions)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.persistence.updateAction { realm in
-                let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
-                list.usersList.append(DonainRealmPrimaryMapper().convert(model: newUser))
-            }
+        saveSubject
+			.flatMap { [persistence] in
+				persistence!.updateAction { realm in
+					let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
+					list.usersList.append(DonainRealmPrimaryMapper().convert(model: newUser))
+				}
+			}
             .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
             .store(in: &self.subscriptions)
-        }
         
         // then
         _ = XCTWaiter.wait(for: [.init()], timeout: 3)

@@ -173,11 +173,11 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
     
     // MARK: Action
     
-    func updateAction(_ action: @escaping (Realm) -> Void) -> AnySinglePublisher<Void, Error> {
+    func updateAction(_ action: @escaping (Realm) throws -> Void) -> AnySinglePublisher<Void, Error> {
         return realm(scheduler: scheduler)
             .tryMap { realm in
 				try realm.safeWrite {
-					action(realm)
+					try action(realm)
 				}
             }
             .eraseToAnySinglePublisher()
@@ -192,9 +192,9 @@ final class PersistenceGateway<S: Scheduler>: PersistenceGatewayProtocol {
 }
 
 extension Realm {
-	func safeWrite(_ block: () -> Void) throws {
+	func safeWrite(_ block: () throws -> Void) throws {
 		if isInWriteTransaction {
-			block()
+			try block()
 		} else {
 			try write(block)
 		}

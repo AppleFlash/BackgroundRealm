@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		00144D1B2666668D00EE7664 /* UserStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00144D1A2666668D00EE7664 /* UserStorage.swift */; };
+		0026291926B1DDBC00668D1F /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0026291826B1DDBC00668D1F /* main.swift */; };
+		0026291D26B1DDE800668D1F /* TestsAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0026291C26B1DDE800668D1F /* TestsAppDelegate.swift */; };
 		00762F37269CCB0700BD6330 /* Publisher+Diff.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00762F36269CCB0700BD6330 /* Publisher+Diff.swift */; };
 		00AAC4992660257C009F43A1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00AAC4982660257C009F43A1 /* AppDelegate.swift */; };
 		00AAC49D2660257C009F43A1 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00AAC49C2660257C009F43A1 /* ViewController.swift */; };
@@ -46,6 +48,8 @@
 
 /* Begin PBXFileReference section */
 		00144D1A2666668D00EE7664 /* UserStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserStorage.swift; sourceTree = "<group>"; };
+		0026291826B1DDBC00668D1F /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		0026291C26B1DDE800668D1F /* TestsAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestsAppDelegate.swift; sourceTree = "<group>"; };
 		00762F36269CCB0700BD6330 /* Publisher+Diff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Publisher+Diff.swift"; sourceTree = "<group>"; };
 		00AAC4952660257C009F43A1 /* RealmTest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RealmTest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		00AAC4982660257C009F43A1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -126,6 +130,7 @@
 				00AAC4A32660257E009F43A1 /* LaunchScreen.storyboard */,
 				00AAC4A62660257E009F43A1 /* Info.plist */,
 				00BBF68C2674A13F0033844D /* Single.swift */,
+				0026291826B1DDBC00668D1F /* main.swift */,
 			);
 			path = RealmTest;
 			sourceTree = "<group>";
@@ -168,6 +173,7 @@
 			children = (
 				00C169D6266FFF54005EF0E1 /* Persistence */,
 				00C169D0266FFF48005EF0E1 /* Info.plist */,
+				0026291C26B1DDE800668D1F /* TestsAppDelegate.swift */,
 			);
 			path = RealmTestTests;
 			sourceTree = "<group>";
@@ -313,6 +319,7 @@
 			files = (
 				00F6202A267881A700107F16 /* PersistenceGatewayProtocol.swift in Sources */,
 				00AAC49D2660257C009F43A1 /* ViewController.swift in Sources */,
+				0026291926B1DDBC00668D1F /* main.swift in Sources */,
 				00AAC4992660257C009F43A1 /* AppDelegate.swift in Sources */,
 				00144D1B2666668D00EE7664 /* UserStorage.swift in Sources */,
 				00B4581426602BE700D15EFD /* User.swift in Sources */,
@@ -329,6 +336,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0026291D26B1DDE800668D1F /* TestsAppDelegate.swift in Sources */,
 				00BBF6962677D7820033844D /* PersistenceGatewayListenChangesetTests.swift in Sources */,
 				00B08EE52670A32A004D9D2D /* PersistenceGatewayCoomonTests.swift in Sources */,
 				00BBF69226752B120033844D /* PrimaryKeyUser.swift in Sources */,
