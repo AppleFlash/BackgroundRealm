@@ -59,7 +59,7 @@ struct APIUser {
     let name: String
 }
 
-struct User: Equatable {
+struct User: Equatable, Identifiable {
     let id: UUID
     var name: String
 }

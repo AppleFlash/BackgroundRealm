@@ -50,6 +50,20 @@ final class UserStorage {
 		}
 	}
 	
+	func saveToContainer(users: [User]) -> AnySinglePublisher<Void, Error> {
+		let id = containerId
+		return gateway.updateAction { realm in
+			let objects = realm.objects(AppRealmUserContainer.self).filter("id = %@", id)
+			guard let container = objects.first else {
+				throw UserStorageError.containerNotExist
+			}
+			
+			let mapper = UserMapper()
+			let realmUsers = users.map(mapper.convert)
+			container.usersList.append(objectsIn: realmUsers)
+		}
+	}
+	
 	func updateInContainer(user: User) -> AnySinglePublisher<Void, Error> {
 		let id = containerId
 		return gateway.updateAction { realm in

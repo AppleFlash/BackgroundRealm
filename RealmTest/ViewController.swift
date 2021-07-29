@@ -7,86 +7,60 @@
 
 import UIKit
 import Combine
+import SwiftUI
 
-let ID = "3B3267DC-A544-42D4-AC99-74EEE41F4CA8"
-
-class ViewController: UIViewController {
-	@IBOutlet private  weak var tableView: UITableView!
-	private var subscriptions = Set<AnyCancellable>()
-	private let viewModel = ViewModel()
-	private let cellId = "myCellId"
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-		viewModel.viewDidLoad()
-		configureTableView()
-		subscribeToUpdates()
-    }
+struct ListView: View {
+	@StateObject var viewModel = ViewModel()
 	
-	func configureTableView() {
-		tableView.delegate = self
-		tableView.dataSource = self
-		tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellId)
-	}
-	
-	func subscribeToUpdates() {
-		viewModel.usersChanges
-			.receive(on: RunLoop.main)
-			.sink { [tableView] users in
-				tableView?.reloadData()
+	var body: some View {
+		HStack {
+			Button {
+				viewModel.addUser()
+			} label: {
+				Text("Add user")
 			}
-			.store(in: &subscriptions)
-	}
-	
-	@IBAction func addUser(_ sender: Any) {
-		viewModel.addUser()
-	}
-}
-
-extension ViewController: UITableViewDelegate, UITableViewDataSource {
-	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-		return viewModel.users.count
-	}
-	
-	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-		let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
-		let user = viewModel.users[indexPath.row]
-		cell.textLabel?.text = user.name
-		
-		return cell
-	}
-	
-	func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-		tableView.deselectRow(at: indexPath, animated: true)
-		
-		viewModel.didTap(user: viewModel.users[indexPath.row])
-	}
-	
-	func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-		guard editingStyle == .delete else {
-			return
+			
+			Button {
+				viewModel.addUsers()
+			} label: {
+				Text("Add list of users")
+			}
 		}
-		
-		viewModel.deleteUser(at: indexPath.row)
+
+		List {
+			ForEach(viewModel.users) { user in
+				Text(user.name).onTapGesture {
+					viewModel.didTap(user: user)
+				}
+			}
+			.onDelete { set in
+				viewModel.deleteUser(at: set.first!)
+			}
+		}
 	}
 }
 
-final class ViewModel {
+final class ViewModel: ObservableObject {
 	private let userStorage = UserStorage()
 	private var subscriptions = Set<AnyCancellable>()
 	
 	private let userSubject = CurrentValueSubject<[User], Never>([])
 	
-	var users: [User] {
-		return userSubject.value
-	}
+	@Published var users: [User] = []
 	
-	var usersChanges: AnyPublisher<[User], Never> {
-		return userSubject.removeDuplicates().eraseToAnyPublisher()
+	init() {
+		viewDidLoad()
 	}
 	
 	func viewDidLoad() {
+		userSubject
+			.removeDuplicates()
+			.receive(on: RunLoop.main)
+			.sink { [weak self] users in
+				self?.users = users
+			}
+			.store(in: &subscriptions)
+		
 		userStorage.saveContainer()
 			.flatMap { [userStorage] in
 				userStorage.listenChangesetContainer()
@@ -150,6 +124,22 @@ final class ViewModel {
 				switch result {
 				case .finished:
 					print("user \(id.uuidString) did save")
+				case let .failure(error):
+					print("save error \(error)")
+				}
+			} receiveValue: {}
+			.store(in: &subscriptions)
+	}
+	
+	func addUsers() {
+		let ids = (0...3).map { _ in UUID() }
+		
+		let users = ids.map { User(id: $0, name: "user \($0.uuidString)") }
+		userStorage.saveToContainer(users: users)
+			.sink { result in
+				switch result {
+				case .finished:
+					print("users \(ids.map { $0.uuidString }) did save")
 				case let .failure(error):
 					print("save error \(error)")
 				}
