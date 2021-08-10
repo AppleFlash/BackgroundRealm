@@ -11,6 +11,9 @@
 		0026291926B1DDBC00668D1F /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0026291826B1DDBC00668D1F /* main.swift */; };
 		0026291D26B1DDE800668D1F /* TestsAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0026291C26B1DDE800668D1F /* TestsAppDelegate.swift */; };
 		00762F37269CCB0700BD6330 /* Publisher+Diff.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00762F36269CCB0700BD6330 /* Publisher+Diff.swift */; };
+		00A6D5C826C304CC008E0BFC /* ImmediateScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A6D5C426C304CC008E0BFC /* ImmediateScheduler.swift */; };
+		00A6D5CA26C304CC008E0BFC /* TestScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A6D5C626C304CC008E0BFC /* TestScheduler.swift */; };
+		00A6D5CB26C304CC008E0BFC /* AnyScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A6D5C726C304CC008E0BFC /* AnyScheduler.swift */; };
 		00AAC4992660257C009F43A1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00AAC4982660257C009F43A1 /* AppDelegate.swift */; };
 		00AAC49D2660257C009F43A1 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00AAC49C2660257C009F43A1 /* ViewController.swift */; };
 		00AAC4A02660257C009F43A1 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 00AAC49E2660257C009F43A1 /* Main.storyboard */; };
@@ -51,6 +54,9 @@
 		0026291826B1DDBC00668D1F /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		0026291C26B1DDE800668D1F /* TestsAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestsAppDelegate.swift; sourceTree = "<group>"; };
 		00762F36269CCB0700BD6330 /* Publisher+Diff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Publisher+Diff.swift"; sourceTree = "<group>"; };
+		00A6D5C426C304CC008E0BFC /* ImmediateScheduler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImmediateScheduler.swift; sourceTree = "<group>"; };
+		00A6D5C626C304CC008E0BFC /* TestScheduler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestScheduler.swift; sourceTree = "<group>"; };
+		00A6D5C726C304CC008E0BFC /* AnyScheduler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnyScheduler.swift; sourceTree = "<group>"; };
 		00AAC4952660257C009F43A1 /* RealmTest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RealmTest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		00AAC4982660257C009F43A1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		00AAC49C2660257C009F43A1 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -100,6 +106,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		00A6D5C326C304CC008E0BFC /* Schedulers */ = {
+			isa = PBXGroup;
+			children = (
+				00A6D5C426C304CC008E0BFC /* ImmediateScheduler.swift */,
+				00A6D5C626C304CC008E0BFC /* TestScheduler.swift */,
+				00A6D5C726C304CC008E0BFC /* AnyScheduler.swift */,
+			);
+			path = Schedulers;
+			sourceTree = "<group>";
+		};
 		00AAC48C2660257C009F43A1 = {
 			isa = PBXGroup;
 			children = (
@@ -122,6 +138,7 @@
 		00AAC4972660257C009F43A1 /* RealmTest */ = {
 			isa = PBXGroup;
 			children = (
+				00A6D5C326C304CC008E0BFC /* Schedulers */,
 				00B4580E266028FE00D15EFD /* Realm */,
 				00AAC4982660257C009F43A1 /* AppDelegate.swift */,
 				00AAC49C2660257C009F43A1 /* ViewController.swift */,
@@ -320,12 +337,15 @@
 				00F6202A267881A700107F16 /* PersistenceGatewayProtocol.swift in Sources */,
 				00AAC49D2660257C009F43A1 /* ViewController.swift in Sources */,
 				0026291926B1DDBC00668D1F /* main.swift in Sources */,
+				00A6D5CB26C304CC008E0BFC /* AnyScheduler.swift in Sources */,
 				00AAC4992660257C009F43A1 /* AppDelegate.swift in Sources */,
 				00144D1B2666668D00EE7664 /* UserStorage.swift in Sources */,
 				00B4581426602BE700D15EFD /* User.swift in Sources */,
+				00A6D5C826C304CC008E0BFC /* ImmediateScheduler.swift in Sources */,
 				00BBF68D2674A13F0033844D /* Single.swift in Sources */,
 				00B458102660291900D15EFD /* PersistenceGateway.swift in Sources */,
 				00B4581226602BD200D15EFD /* Mapper.swift in Sources */,
+				00A6D5CA26C304CC008E0BFC /* TestScheduler.swift in Sources */,
 				00F62025267880B600107F16 /* ChangesetItem.swift in Sources */,
 				00F62027267880F500107F16 /* PersistenceChangeset.swift in Sources */,
 				00762F37269CCB0700BD6330 /* Publisher+Diff.swift in Sources */,

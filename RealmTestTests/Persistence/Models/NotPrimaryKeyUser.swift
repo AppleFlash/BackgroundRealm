@@ -21,7 +21,7 @@ final class RealmNotPrimaryKeyUser: Object {
 
 // MARK: - Mappers
 
-struct DonainRealmNotPrimaryMapper: ObjectToPersistenceMapper {
+struct DomainRealmNotPrimaryMapper: ObjectToPersistenceMapper {
     func convert(model: NotPrimaryKeyUser) -> RealmNotPrimaryKeyUser {
         let user = RealmNotPrimaryKeyUser()
         user.age = model.age

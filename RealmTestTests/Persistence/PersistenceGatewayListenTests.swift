@@ -14,19 +14,21 @@ import Combine
 final class PersistenceGatewayListenTests: XCTestCase {
     private var persistence: PersistenceGatewayProtocol!
     private var subscriptions = Set<AnyCancellable>()
+	private var listenScheduler: TestSchedulerOf<RunLoop>!
     
     override func setUp() {
         super.setUp()
         
-        let queue = DispatchQueue(label: "com.test.persistence.listen")
+		listenScheduler = RunLoop.test
         let config = Realm.Configuration(inMemoryIdentifier: "in memory listen test realm \(UUID().uuidString)")
-        persistence = PersistenceGateway(scheduler: queue, configuration: config)
+		persistence = PersistenceGateway(regularScheduler: .immediate, listenScheduler: listenScheduler.eraseToAnyScheduler(), configuration: config)
     }
     
     override func tearDown() {
 		persistence.deleteAll()
         persistence = nil
         subscriptions.removeAll()
+		listenScheduler = nil
         
         super.tearDown()
     }
@@ -38,33 +40,24 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let user = PrimaryKeyUser(id: "id1", name: UUID().uuidString, age: .random(in: 10...99))
         let expectedChangedAges = [20, 30]
         var changedAges: [Int] = []
-        let expect = expectation(description: "save")
         persistence
             .listen(mapper: RealmDomainPrimaryMapper()) { results in
                 results.filter("id = %@", user.id)
             }
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { user in
-                    changedAges.append(user.age)
-                    if changedAges.count == expectedChangedAges.count {
-                        expect.fulfill()
-                    }
-                }
-            )
+            .sink { _ in } receiveValue: { changedAges.append($0.age) }
             .store(in: &subscriptions)
 
         // when
         persistence.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 20), mapper: DonainRealmPrimaryMapper())
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 30), mapper: DonainRealmPrimaryMapper())
+			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
+            .flatMap {
+				self.persistence.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 30), mapper: DonainRealmPrimaryMapper())
             }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
+			.sink()
             .store(in: &subscriptions)
 
         // then
-        waitForExpectations(timeout: 2)
         XCTAssertEqual(changedAges, expectedChangedAges)
     }
     
@@ -75,35 +68,28 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let users = [createUser(age: 1), createUser(age: 1), oldUser]
         let expectedUsers = [[oldUser], [oldUser, newUser]]
         var receivedUsers: [[PrimaryKeyUser]] = []
-        let expect = expectation(description: "save")
         
         persistence.listenArray(mapper: RealmDomainPrimaryMapper(), range: nil) {
             $0.filter("age > %@", 1).sorted(byKeyPath: #keyPath(RealmPrimaryKeyUser.age), ascending: true)
         }
+		.filter { !$0.isEmpty }
         .sink(
             receiveCompletion: { _ in },
-            receiveValue: { users in
-                if !users.isEmpty {
-                    receivedUsers.append(users)
-                }
-                if receivedUsers.count == expectedUsers.count {
-                    expect.fulfill()
-                }
-            }
+            receiveValue: { receivedUsers.append($0) }
         )
         .store(in: &subscriptions)
         
         // when
         persistence.save(objects: users, mapper: DonainRealmPrimaryMapper())
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.save(object: newUser, mapper: DonainRealmPrimaryMapper())
+			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
+            .flatMap {
+				self.persistence.save(object: newUser, mapper: DonainRealmPrimaryMapper())
             }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
+			.sink()
             .store(in: &subscriptions)
 
         // then
-        waitForExpectations(timeout: 2)
         XCTAssertEqual(receivedUsers, expectedUsers)
     }
     
@@ -112,32 +98,23 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let users = [createUser(), createUser()]
         let expectedUsers = Array(users.dropLast())
         var receivedUsers: [PrimaryKeyUser] = []
-        let expect = expectation(description: "save")
+		
         persistence.save(objects: users, mapper: DonainRealmPrimaryMapper())
-            .flatMap { [persistence] in
-                persistence!.listenArray(mapper: RealmDomainPrimaryMapper())
-            }
-            .dropFirst(1)
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { users in
-                    receivedUsers = users
-                    expect.fulfill()
-                }
-            )
-            .store(in: &subscriptions)
+			.flatMap {
+				self.persistence.listenArray(mapper: RealmDomainPrimaryMapper())
+			}
+			.sink { _ in } receiveValue: { receivedUsers = $0 }
+			.store(in: &subscriptions)
         
         // when
-        Just(())
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.delete(DonainRealmPrimaryMapper.self) { $0.filter("id = %@", users.last!.id) }
-            }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-            .store(in: &subscriptions)
+		persistence.delete(DonainRealmPrimaryMapper.self) { $0.filter("id = %@", users.last!.id) }
+			.sink()
+			.store(in: &subscriptions)
+		
+		listenScheduler.run()
 
         // then
-        waitForExpectations(timeout: 5)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
         XCTAssertEqual(receivedUsers, expectedUsers)
     }
     
@@ -150,33 +127,23 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let users = [firstUser, secondUser].sorted { $0.name < $1.name }
         let expectedUsers = [updatedUser, secondUser]
         var receivedUsers: [PrimaryKeyUser] = []
-        let expect = expectation(description: "save")
         
         persistence.save(objects: users, mapper: DonainRealmPrimaryMapper())
-            .flatMap { [persistence] in
-                persistence!.listenArray(mapper: RealmDomainPrimaryMapper())
+            .flatMap {
+				self.persistence.listenArray(mapper: RealmDomainPrimaryMapper())
             }
-            .dropFirst()
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { users in
-                    receivedUsers = users.sorted { $0.name < $1.name }
-                    expect.fulfill()
-                }
-            )
+            .sink { _ in } receiveValue: { receivedUsers = $0.sorted { $0.name < $1.name } }
             .store(in: &subscriptions)
         
         // when
-        Just(())
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.save(object: updatedUser, mapper: DonainRealmPrimaryMapper())
-            }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+		persistence.save(object: updatedUser, mapper: DonainRealmPrimaryMapper())
+            .sink()
             .store(in: &subscriptions)
+		
+		listenScheduler.run()
 
         // then
-        waitForExpectations(timeout: 2)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
         XCTAssertEqual(receivedUsers, expectedUsers)
     }
     
@@ -185,28 +152,22 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let users = (0..<20).map { createUser(age: $0) }
         let expectedUsers = Array(users.filter { $0.age > 10 }.prefix(5))
         var receivedUsers: [PrimaryKeyUser] = []
-        let expect = expectation(description: "save")
 
         persistence.listenArray(mapper: RealmDomainPrimaryMapper(), range: 0..<5) {
             $0.filter("age > 10").sorted(byKeyPath: #keyPath(RealmPrimaryKeyUser.age), ascending: true)
         }
-        .dropFirst()
-        .sink(
-            receiveCompletion: { _ in },
-            receiveValue: { users in
-                receivedUsers = users
-                expect.fulfill()
-            }
-        )
+        .sink { _ in } receiveValue: { receivedUsers = $0 }
         .store(in: &subscriptions)
         
         // when
         persistence.save(objects: users, mapper: DonainRealmPrimaryMapper())
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+			.sink()
             .store(in: &subscriptions)
+		
+		listenScheduler.run()
 
         // then
-        waitForExpectations(timeout: 2)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
         XCTAssertEqual(receivedUsers, expectedUsers)
     }
     
@@ -223,17 +184,19 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
         persistence.save(object: container, mapper: saveMapper, update: .all)
-            .flatMap { [persistence] in
-                persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+            .flatMap {
+				self.persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
             }
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
                 received = $0
             })
             .store(in: &subscriptions)
+		
+		listenScheduler.run()
         
         // then
-        _ = XCTWaiter.wait(for: [.init()], timeout: 2)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
         XCTAssertEqual(count, 1)
         XCTAssertEqual(container, received)
     }
@@ -253,27 +216,32 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
 		let saveSubject = persistence.save(object: container, mapper: saveMapper, update: .all)
         saveSubject
-            .flatMap { [persistence] in
-                persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+            .flatMap {
+				self.persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
             }
+			.dropFirst()
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
                 received = $0
             })
             .store(in: &subscriptions)
+		
+		listenScheduler.advance()
         
-        saveSubject
-			.flatMap { [persistence] in
-				persistence!.updateAction { realm in
+		saveSubject
+			.flatMap {
+				self.persistence.updateAction { realm in
 					let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
 					list.usersList.append(DonainRealmPrimaryMapper().convert(model: newUser))
 				}
 			}
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-            .store(in: &self.subscriptions)
+			.sink()
+			.store(in: &self.subscriptions)
+		
+		listenScheduler.advance()
         
         // then
-        _ = XCTWaiter.wait(for: [.init()], timeout: 3)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
         XCTAssertEqual(count, 2)
         XCTAssertEqual(resultContainer, received)
     }
@@ -291,30 +259,35 @@ final class PersistenceGatewayListenTests: XCTestCase {
         // when
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
-        persistence.save(object: container, mapper: saveMapper, update: .all)
-            .flatMap { [persistence] in
-                persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+		let saveSubject = persistence.save(object: container, mapper: saveMapper, update: .all)
+        saveSubject
+            .flatMap {
+				self.persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
             }
+			.dropFirst()
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
                 received = $0
             })
             .store(in: &subscriptions)
+		
+		listenScheduler.advance()
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.persistence.updateAction { realm in
-                let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
-                let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[0].id))!
-                let realmUser = DonainRealmPrimaryMapper().convert(model: modifiedUsers[0])
-                let obj = realm.create(RealmPrimaryKeyUser.self, value: realmUser, update: .all)
-                list.usersList[index] = obj
-            }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-            .store(in: &self.subscriptions)
-        }
+		saveSubject
+			.flatMap {
+				self.persistence.updateAction { realm in
+					let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
+					let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[0].id))!
+					let realmUser = DonainRealmPrimaryMapper().convert(model: modifiedUsers[0])
+					let obj = realm.create(RealmPrimaryKeyUser.self, value: realmUser, update: .all)
+					list.usersList[index] = obj
+				}
+			}
+			.sink()
+			.store(in: &self.subscriptions)
         
         // then
-        _ = XCTWaiter.wait(for: [.init()], timeout: 3)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
         XCTAssertEqual(count, 2)
         XCTAssertEqual(resultContainer, received)
     }
@@ -331,28 +304,34 @@ final class PersistenceGatewayListenTests: XCTestCase {
         // when
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
-        persistence.save(object: container, mapper: saveMapper, update: .all)
-            .flatMap { [persistence] in
-                persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+		let saveSubject = persistence.save(object: container, mapper: saveMapper, update: .all)
+		
+        saveSubject
+            .flatMap {
+				self.persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
             }
+			.dropFirst()
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
                 received = $0
             })
             .store(in: &subscriptions)
+		
+		listenScheduler.advance()
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.persistence.updateAction { realm in
-                let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
-                let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[1].id))!
-                list.usersList.remove(at: index)
-            }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
-            .store(in: &self.subscriptions)
-        }
+		saveSubject
+			.flatMap {
+				self.persistence.updateAction { realm in
+					let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
+					let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[1].id))!
+					list.usersList.remove(at: index)
+				}
+			}
+			.sink()
+			.store(in: &self.subscriptions)
         
         // then
-        _ = XCTWaiter.wait(for: [.init()], timeout: 3)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
         XCTAssertEqual(count, 2)
         XCTAssertEqual(resultContainer, received)
     }
@@ -368,7 +347,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
         
-        persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+        persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
                 received = $0
@@ -376,18 +355,14 @@ final class PersistenceGatewayListenTests: XCTestCase {
             .store(in: &subscriptions)
         
         // when
-        Just(())
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.save(object: container, mapper: saveMapper, update: .all)
-            }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in
-                print("here")
-            })
+        persistence.save(object: container, mapper: saveMapper, update: .all)
+            .sink()
             .store(in: &subscriptions)
+		
+		listenScheduler.advance()
         
         // then
-        _ = XCTWaiter.wait(for: [.init()], timeout: 2)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
         XCTAssertEqual(count, 1)
         XCTAssertEqual(container, received)
     }
@@ -404,7 +379,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
         
-        persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+        persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
                 received = $0
@@ -413,17 +388,20 @@ final class PersistenceGatewayListenTests: XCTestCase {
         
         // when
         persistence.save(object: container, mapper: saveMapper, update: .all)
-            .flatMap { [persistence] in
-                persistence!.updateAction { realm in
+			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
+            .flatMap {
+				self.persistence.updateAction { realm in
                     let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
                     list.usersList.append(DonainRealmPrimaryMapper().convert(model: newUser))
                 }
             }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+            .sink()
             .store(in: &subscriptions)
+		
+		listenScheduler.advance()
         
         // then
-        _ = XCTWaiter.wait(for: [.init()], timeout: 2)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
         XCTAssertEqual(count, 2)
         XCTAssertEqual(resultContainer, received)
     }
@@ -440,7 +418,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
         
-        persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+        persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
                 received = $0
@@ -450,8 +428,9 @@ final class PersistenceGatewayListenTests: XCTestCase {
         // when
         
         persistence.save(object: container, mapper: saveMapper, update: .all)
-            .flatMap { [persistence] in
-                persistence!.updateAction { realm in
+			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
+            .flatMap {
+				self.persistence.updateAction { realm in
                     let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
                     let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[0].id))!
                     let realmUser = DonainRealmPrimaryMapper().convert(model: modifiedUsers[0])
@@ -459,11 +438,13 @@ final class PersistenceGatewayListenTests: XCTestCase {
                     list.usersList[index] = obj
                 }
             }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+            .sink()
             .store(in: &subscriptions)
+		
+		listenScheduler.advance()
         
         // then
-        _ = XCTWaiter.wait(for: [.init()], timeout: 2)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
         XCTAssertEqual(count, 2)
         XCTAssertEqual(resultContainer, received)
     }
@@ -479,7 +460,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
         
-        persistence!.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+        persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
                 received = $0
@@ -488,18 +469,21 @@ final class PersistenceGatewayListenTests: XCTestCase {
         
         // when
         persistence.save(object: container, mapper: saveMapper, update: .all)
-            .flatMap { [persistence] in
-                persistence!.updateAction { realm in
+			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
+            .flatMap {
+				self.persistence.updateAction { realm in
                     let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
                     let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[1].id))!
                     list.usersList.remove(at: index)
                 }
             }
-            .sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+            .sink()
             .store(in: &subscriptions)
+		
+		listenScheduler.advance()
         
         // then
-        _ = XCTWaiter.wait(for: [.init()], timeout: 2)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
         XCTAssertEqual(count, 2)
         XCTAssertEqual(resultContainer, received)
     }

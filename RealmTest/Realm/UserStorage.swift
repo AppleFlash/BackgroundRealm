@@ -16,13 +16,13 @@ enum UserStorageError: Error {
 }
 
 final class UserStorage {
-    private let gateway: PersistenceGateway<DispatchQueue>
+    private let gateway: PersistenceGateway
 	private let containerId = "containerId"
     
     init() {
         let queue = DispatchQueue(label: "com.user.persistence")
 		let config = Realm.Configuration(objectTypes: [RealmUser.self, AppRealmUserContainer.self])
-        gateway = PersistenceGateway(scheduler: queue, configuration: config)
+		gateway = PersistenceGateway(regularScheduler: queue.eraseToAnyScheduler(), configuration: config)
     }
     
     func update(user: User) -> AnySinglePublisher<Void, Error> {

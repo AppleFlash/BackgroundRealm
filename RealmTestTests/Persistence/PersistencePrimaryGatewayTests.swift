@@ -21,9 +21,8 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        let queue = DispatchQueue(label: "com.test.persistence.primary")
         let config = Realm.Configuration(inMemoryIdentifier: "in memory primary test realm \(UUID().uuidString)")
-        persistence = PersistenceGateway(scheduler: queue, configuration: config)
+		persistence = PersistenceGateway(regularScheduler: .immediate, configuration: config)
     }
     
     override func tearDown() {
@@ -40,21 +39,14 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         // given
         let user = createUser()
         var saveError: Error?
-        let expect = expectation(description: "save")
 
         // when
         persistence
             .save(object: user, mapper: DonainRealmPrimaryMapper())
-            .sink { result in
-                if case let .failure(error) = result {
-                    saveError = error
-                }
-                expect.fulfill()
-            } receiveValue: { _ in }
+            .sink { saveError = $0.error } receiveValue: { _ in }
             .store(in: &subscriptions)
 
         // then
-        waitForExpectations(timeout: 2)
         XCTAssertNil(saveError)
     }
     
@@ -63,7 +55,6 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         let user = createUser()
         let newUserData = PrimaryKeyUser(id: user.id, name: "new name", age: -10)
         var updatedUser: PrimaryKeyUser?
-        let expect = expectation(description: "save")
         
         // when
         persistence
@@ -74,14 +65,10 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
             .flatMap { [persistence] in
                 persistence!.get(mapper: RealmDomainPrimaryMapper())
             }
-            .sink { _ in } receiveValue: { user in
-                updatedUser = user
-                expect.fulfill()
-            }
+            .sink { _ in } receiveValue: { updatedUser = $0 }
             .store(in: &subscriptions)
 
         // then
-        waitForExpectations(timeout: 2)
         XCTAssertEqual(updatedUser, newUserData)
     }
     
@@ -90,7 +77,6 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         let user = createUser()
         let newUserData = PrimaryKeyUser(id: user.id, name: "new name", age: -10)
         var count: Int?
-        let expect = expectation(description: "save")
         
         // when
         persistence
@@ -101,14 +87,10 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
             .flatMap { [persistence] in
                 persistence!.count(DonainRealmPrimaryMapper.self) { $0 }
             }
-            .sink { _ in } receiveValue: { objectsCount in
-                count = objectsCount
-                expect.fulfill()
-            }
+            .sink { _ in } receiveValue: { count = $0 }
             .store(in: &subscriptions)
 
         // then
-        waitForExpectations(timeout: 2)
         XCTAssertEqual(count, 1)
     }
 
@@ -116,21 +98,14 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         // given
         let users = [createUser()]
         var saveError: Error?
-        let expect = expectation(description: "save")
 
         // when
         persistence
             .save(objects: users, mapper: DonainRealmPrimaryMapper())
-            .sink { result in
-                if case let .failure(error) = result {
-                    saveError = error
-                }
-                expect.fulfill()
-            } receiveValue: { _ in }
+			.sink { saveError = $0.error } receiveValue: { _ in }
             .store(in: &subscriptions)
 
         // then
-        waitForExpectations(timeout: 2)
         XCTAssertNil(saveError)
     }
 
@@ -140,7 +115,6 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         // given
         let user = createUser()
         var savedUser: PrimaryKeyUser?
-        let expect = expectation(description: "save")
 
         // when
         persistence
@@ -148,17 +122,10 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
             .flatMap { [persistence] in
                 persistence!.get(mapper: RealmDomainPrimaryMapper())
             }
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { user in
-                    savedUser = user
-                    expect.fulfill()
-                }
-            )
+            .sink { _ in } receiveValue: { savedUser = $0 }
             .store(in: &subscriptions)
 
         // then
-        waitForExpectations(timeout: 2)
         XCTAssertEqual(user, savedUser)
     }
 
@@ -169,7 +136,6 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
             createUser()
         ].sorted { $0.name < $1.name }
         var savedUsers: [PrimaryKeyUser] = []
-        let expect = expectation(description: "save")
 
         // when
         persistence
@@ -179,17 +145,10 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
                     results.filter("name IN %@", users.map(\.name))
                 }
             }
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { users in
-                    savedUsers = users.sorted { $0.name < $1.name }
-                    expect.fulfill()
-                }
-            )
+            .sink { _ in } receiveValue: { savedUsers = $0.sorted { $0.name < $1.name } }
             .store(in: &subscriptions)
 
         // then
-        waitForExpectations(timeout: 2)
         XCTAssertEqual(users, savedUsers)
     }
     
@@ -199,7 +158,6 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         // given
         let users = [createUser(), createUser()]
         var countAfterDelete: Int?
-        let expect = expectation(description: "save")
         
         // when
         persistence
@@ -210,14 +168,10 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
             .flatMap { [persistence] in
                 persistence!.count(DonainRealmPrimaryMapper.self) { $0 }
             }
-            .sink { _ in } receiveValue: { objectsCount in
-                countAfterDelete = objectsCount
-                expect.fulfill()
-            }
+            .sink { _ in } receiveValue: { countAfterDelete = $0 }
             .store(in: &subscriptions)
 
         // then
-        waitForExpectations(timeout: 2)
         XCTAssertEqual(countAfterDelete, 1)
     }
     

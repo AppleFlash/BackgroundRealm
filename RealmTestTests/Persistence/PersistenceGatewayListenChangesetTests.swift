@@ -14,19 +14,21 @@ import Combine
 final class PersistenceGatewayListenChangesetTests: XCTestCase {
     private var persistence: PersistenceGatewayProtocol!
     private var subscriptions = Set<AnyCancellable>()
+	private var listenScheduler: TestSchedulerOf<RunLoop>!
     
     override func setUp() {
         super.setUp()
         
-        let queue = DispatchQueue(label: "com.test.persistence.changeset")
+		listenScheduler = RunLoop.test
         let config = Realm.Configuration(inMemoryIdentifier: "in memory listen changeset test realm \(UUID().uuidString)")
-        persistence = PersistenceGateway(scheduler: queue, configuration: config)
+		persistence = PersistenceGateway(regularScheduler: .immediate, listenScheduler: listenScheduler.eraseToAnyScheduler(), configuration: config)
     }
     
     override func tearDown() {
 		persistence.deleteAll()
         persistence = nil
         subscriptions.removeAll()
+		listenScheduler = nil
         
         super.tearDown()
     }
@@ -35,32 +37,33 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
         // given
         let users = (0..<3).map { createUser(id: "\($0)") }
         var changeset: PersistenceChangeset<PrimaryKeyUser>?
-        let expect = expectation(description: "listen")
 		let container = KeyedUserContainer(id: "1", users: users)
 		let domainMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
 		let realmMapper = RealmDomainPrimaryMapper()
+		let expectation = expectation(description: "realm expectation")
 
         // when
         persistence.save(object: container, mapper: domainMapper)
-            .flatMap { [persistence] in
-                persistence!.listenOrderedArrayChanges(
+            .flatMap {
+				self.persistence.listenOrderedArrayChanges(
 					RealmDomainKeyedUserContainerMapper.self,
 					mapper: realmMapper,
 					filterBlock: { $0.first?.usersList }
 				)
             }
-            .sink(receiveCompletion: { _ in }) { receivedChangeset in
-                changeset = receivedChangeset
-                expect.fulfill()
-            }
+			.sink { _ in } receiveValue: {
+				changeset = $0
+				expectation.fulfill()
+			}
             .store(in: &subscriptions)
+		
+		listenScheduler.run()
 
         // then
-        waitForExpectations(timeout: 2)
+		waitForExpectations(timeout: 1)
         switch changeset {
         case let .initial(objects):
-            let receivedUsers =  objects.sorted { $0.id < $1.id }
-            XCTAssertEqual(receivedUsers, users)
+            XCTAssertEqual(objects, users)
         default:
             XCTFail()
         }
@@ -91,14 +94,13 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
         })
         .store(in: &subscriptions)
 
+		listenScheduler.advance()
+		
         // when
-        Just(())
-            .flatMap { [persistence] in
-                persistence!.save(object: container, mapper: domainMapper)
-            }
-            .delay(for: 1, scheduler: RunLoop.main)
-            .flatMap { [persistence] in
-                persistence!.updateAction { realm in
+		persistence.save(object: container, mapper: domainMapper)
+			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
+            .flatMap {
+				self.persistence.updateAction { realm in
                     let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
                     let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[0].id))!
                     let realmUser = DonainRealmPrimaryMapper().convert(model: modifiedUsers[0])
@@ -106,11 +108,13 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
                     list.usersList[index] = obj
                 }
             }
-            .sink(receiveCompletion: { _ in }) { _ in }
+            .sink()
             .store(in: &subscriptions)
+		
+		listenScheduler.advance()
 
         // then
-        _ = XCTWaiter.wait(for: [.init()], timeout: 2)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
         XCTAssertEqual(resultUsersList, expectedUsersList)
     }
     
@@ -134,7 +138,6 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
 		
 		let container = KeyedUserContainer(id: "1", users: startUsers)
 		
-		let expect = expectation(description: "listen.aLotUpdates2")
 		let domainMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
 		let realmMapper = RealmDomainPrimaryMapper()
 		
@@ -154,45 +157,41 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
 		var callCount = 0
 		
 		persistence.save(object: container, mapper: domainMapper)
-			.flatMap { [persistence] in
-				persistence!.listenOrderedArrayChanges(
+			.flatMap {
+				self.persistence.listenOrderedArrayChanges(
 					RealmDomainKeyedUserContainerMapper.self,
 					mapper: realmMapper,
 					filterBlock: { $0.filter("id = %@", "1").first?.usersList }
 				)
 			}
+			.handleEvents(receiveOutput: { _ in self.listenScheduler.advance() })
 			.sink(receiveCompletion: { _ in }) { receivedChangeset in
 				apply(changeset: receivedChangeset, to: &resultUsersList)
 				callCount += 1
-				if callCount == 2 {
-					expect.fulfill()
-				}
 			}
 			.store(in: &subscriptions)
 		
 		// when
-		Just(())
-			.delay(for: 1, scheduler: RunLoop.main)
-			.flatMap { [persistence] in
-				persistence!.updateAction { realm in
-					let mapper = DonainRealmPrimaryMapper()
-					let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
-					list.usersList.remove(atOffsets: .init(idsToDelete))
-		
-					let objectsToInsert = usersToInsert.map(mapper.convert).map { realm.create(RealmPrimaryKeyUser.self, value: $0, update: .all) }
-					list.usersList.append(objectsIn: objectsToInsert)
-					
-					let objectsToModify = usersToModified.map(mapper.convert).map { realm.create(RealmPrimaryKeyUser.self, value: $0, update: .all) }
-					zip(idsToModify, objectsToModify).forEach { mod, obj in
-						list.usersList[mod] = obj
-					}
+		persistence
+			.updateAction { realm in
+				let mapper = DonainRealmPrimaryMapper()
+				let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
+				list.usersList.remove(atOffsets: .init(idsToDelete))
+				
+				let objectsToInsert = usersToInsert.map(mapper.convert).map { realm.create(RealmPrimaryKeyUser.self, value: $0, update: .all) }
+				list.usersList.append(objectsIn: objectsToInsert)
+				
+				let objectsToModify = usersToModified.map(mapper.convert).map { realm.create(RealmPrimaryKeyUser.self, value: $0, update: .all) }
+				zip(idsToModify, objectsToModify).forEach { mod, obj in
+					list.usersList[mod] = obj
 				}
 			}
-			.sink(receiveCompletion: { _ in }) { _ in }
+			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
+			.sink()
 			.store(in: &subscriptions)
 		
 		// then
-		waitForExpectations(timeout: 2)
+		_ = XCTWaiter.wait(for: [.init()], timeout: 0.2)
 		XCTAssertEqual(resultUsersList, expectedUsersList, file: file, line: line)
 	}
     
