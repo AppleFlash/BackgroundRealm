@@ -191,7 +191,7 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         
         // then
         
-        waitForExpectations(timeout: 2)
+        waitForExpectations(timeout: 5)
         XCTAssertNotNil(isReceiveOnMain)
         XCTAssertFalse(isReceiveOnMain ?? true)
     }

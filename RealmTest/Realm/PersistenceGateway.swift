@@ -27,12 +27,12 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
         self.configuration = configuration
     }
     
-    private func realm<S: Scheduler>(scheduler: S) -> AnyPublisher<Realm, Error> {
+    private func realm<S: Scheduler>(scheduler: S) -> AnySinglePublisher<Realm, Error> {
         // Создание рилма в определенном потоке
         return Just((configuration, nil))
             .receive(on: scheduler)
             .tryMap(Realm.init)
-            .eraseToAnyPublisher()
+            .eraseToAnySinglePublisher()
     }
     
     // MARK: Get
@@ -59,7 +59,7 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
             .map { $0.objects(M.PersistenceModel.self) } // Получает список объектов для типа
             .map { filterBlock($0) } // Фильтрует список объектов для получения только интересующего объекта
             .flatMap(\.collectionPublisher) // Наблюдает за изменением фильтрованных объектов. Работает даже, если объект не существовал на момент подписки
-            .threadSafeReference()
+            .freeze()
             .receive(on: regularScheduler)
             .compactMap { $0.last } // Результат может содержать массив объектов, если поиск осуществлялся не по primary key, либо, если primary key нет вовсе.
                                     // Для обработки ситуации, когда нет primary key берется `last`, а не `first`
@@ -82,7 +82,7 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
 			}
 			.compactMap { filterBlock($0) }
 			.flatMap(\.collectionPublisher)
-			.threadSafeReference()
+			.freeze()
 			.receive(on: regularScheduler)
 			.map { $0.map(mapper.convert) }
 			.diff(comparator: comparator)
@@ -110,7 +110,7 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
             .map { $0.objects(M.PersistenceModel.self) }
 			.map { filterBlock($0) }
             .flatMap(\.collectionPublisher)
-            .threadSafeReference()
+            .freeze()
             .receive(on: regularScheduler)
             .map { results -> [M.PersistenceModel] in
                 // Если range существует - получаем слайс из коллекции, иначе берём коллекцию целиком
