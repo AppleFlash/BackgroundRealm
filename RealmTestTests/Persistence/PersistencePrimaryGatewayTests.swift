@@ -42,7 +42,7 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
 
         // when
         persistence
-            .save(object: user, mapper: DonainRealmPrimaryMapper())
+            .save(object: user, mapper: DomainRealmPrimaryMapper())
             .sink { saveError = $0.error } receiveValue: { _ in }
             .store(in: &subscriptions)
 
@@ -58,12 +58,12 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         
         // when
         persistence
-            .save(object: user, mapper: DonainRealmPrimaryMapper())
-            .flatMap { [persistence] in
-                persistence!.save(object: newUserData, mapper: DonainRealmPrimaryMapper(), update: .modified)
+            .save(object: user, mapper: DomainRealmPrimaryMapper())
+            .flatMap {
+				self.persistence.save(object: newUserData, mapper: DomainRealmPrimaryMapper(), update: .modified)
             }
-            .flatMap { [persistence] in
-                persistence!.get(mapper: RealmDomainPrimaryMapper())
+            .flatMap {
+				self.persistence.get(mapper: RealmDomainPrimaryMapper())
             }
             .sink { _ in } receiveValue: { updatedUser = $0 }
             .store(in: &subscriptions)
@@ -80,12 +80,12 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         
         // when
         persistence
-            .save(object: user, mapper: DonainRealmPrimaryMapper())
+            .save(object: user, mapper: DomainRealmPrimaryMapper())
             .flatMap { [persistence] in
-                persistence!.save(object: newUserData, mapper: DonainRealmPrimaryMapper(), update: .modified)
+                persistence!.save(object: newUserData, mapper: DomainRealmPrimaryMapper(), update: .modified)
             }
             .flatMap { [persistence] in
-                persistence!.count(DonainRealmPrimaryMapper.self) { $0 }
+                persistence!.count(DomainRealmPrimaryMapper.self) { $0 }
             }
             .sink { _ in } receiveValue: { count = $0 }
             .store(in: &subscriptions)
@@ -101,7 +101,7 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
 
         // when
         persistence
-            .save(objects: users, mapper: DonainRealmPrimaryMapper())
+            .save(objects: users, mapper: DomainRealmPrimaryMapper())
 			.sink { saveError = $0.error } receiveValue: { _ in }
             .store(in: &subscriptions)
 
@@ -118,7 +118,7 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
 
         // when
         persistence
-            .save(object: user, mapper: DonainRealmPrimaryMapper())
+            .save(object: user, mapper: DomainRealmPrimaryMapper())
             .flatMap { [persistence] in
                 persistence!.get(mapper: RealmDomainPrimaryMapper())
             }
@@ -139,7 +139,7 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
 
         // when
         persistence
-            .save(objects: users, mapper: DonainRealmPrimaryMapper())
+            .save(objects: users, mapper: DomainRealmPrimaryMapper())
             .flatMap { [persistence] in
                 persistence!.getArray(mapper: RealmDomainPrimaryMapper()) { results in
                     results.filter("name IN %@", users.map(\.name))
@@ -161,12 +161,12 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         
         // when
         persistence
-            .save(objects: users, mapper: DonainRealmPrimaryMapper())
+            .save(objects: users, mapper: DomainRealmPrimaryMapper())
             .flatMap { [persistence] in
-                persistence!.delete(DonainRealmPrimaryMapper.self) { $0.filter("id = %@", users.first!.id) }
+                persistence!.delete(DomainRealmPrimaryMapper.self) { $0.filter("id = %@", users.first!.id) }
             }
             .flatMap { [persistence] in
-                persistence!.count(DonainRealmPrimaryMapper.self) { $0 }
+                persistence!.count(DomainRealmPrimaryMapper.self) { $0 }
             }
             .sink { _ in } receiveValue: { countAfterDelete = $0 }
             .store(in: &subscriptions)

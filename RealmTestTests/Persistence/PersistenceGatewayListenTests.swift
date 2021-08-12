@@ -48,10 +48,10 @@ final class PersistenceGatewayListenTests: XCTestCase {
             .store(in: &subscriptions)
 
         // when
-        persistence.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 20), mapper: DonainRealmPrimaryMapper())
+        persistence.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 20), mapper: DomainRealmPrimaryMapper())
 			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
             .flatMap {
-				self.persistence.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 30), mapper: DonainRealmPrimaryMapper())
+				self.persistence.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 30), mapper: DomainRealmPrimaryMapper())
             }
 			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
 			.sink()
@@ -70,7 +70,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         var receivedUsers: [[PrimaryKeyUser]] = []
         
         persistence.listenArray(mapper: RealmDomainPrimaryMapper(), range: nil) {
-            $0.filter("age > %@", 1).sorted(byKeyPath: #keyPath(RealmPrimaryKeyUser.age), ascending: true)
+			$0.filter("age > %@", 1).sorted(by: \.age, ascending: true)
         }
 		.filter { !$0.isEmpty }
         .sink(
@@ -80,10 +80,10 @@ final class PersistenceGatewayListenTests: XCTestCase {
         .store(in: &subscriptions)
         
         // when
-        persistence.save(objects: users, mapper: DonainRealmPrimaryMapper())
+        persistence.save(objects: users, mapper: DomainRealmPrimaryMapper())
 			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
             .flatMap {
-				self.persistence.save(object: newUser, mapper: DonainRealmPrimaryMapper())
+				self.persistence.save(object: newUser, mapper: DomainRealmPrimaryMapper())
             }
 			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
 			.sink()
@@ -99,7 +99,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let expectedUsers = Array(users.dropLast())
         var receivedUsers: [PrimaryKeyUser] = []
 		
-        persistence.save(objects: users, mapper: DonainRealmPrimaryMapper())
+        persistence.save(objects: users, mapper: DomainRealmPrimaryMapper())
 			.flatMap {
 				self.persistence.listenArray(mapper: RealmDomainPrimaryMapper())
 			}
@@ -107,7 +107,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
 			.store(in: &subscriptions)
         
         // when
-		persistence.delete(DonainRealmPrimaryMapper.self) { $0.filter("id = %@", users.last!.id) }
+		persistence.delete(DomainRealmPrimaryMapper.self) { $0.filter("id = %@", users.last!.id) }
 			.sink()
 			.store(in: &subscriptions)
 		
@@ -128,7 +128,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let expectedUsers = [updatedUser, secondUser]
         var receivedUsers: [PrimaryKeyUser] = []
         
-        persistence.save(objects: users, mapper: DonainRealmPrimaryMapper())
+        persistence.save(objects: users, mapper: DomainRealmPrimaryMapper())
             .flatMap {
 				self.persistence.listenArray(mapper: RealmDomainPrimaryMapper())
             }
@@ -136,7 +136,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
             .store(in: &subscriptions)
         
         // when
-		persistence.save(object: updatedUser, mapper: DonainRealmPrimaryMapper())
+		persistence.save(object: updatedUser, mapper: DomainRealmPrimaryMapper())
             .sink()
             .store(in: &subscriptions)
 		
@@ -154,13 +154,13 @@ final class PersistenceGatewayListenTests: XCTestCase {
         var receivedUsers: [PrimaryKeyUser] = []
 
         persistence.listenArray(mapper: RealmDomainPrimaryMapper(), range: 0..<5) {
-            $0.filter("age > 10").sorted(byKeyPath: #keyPath(RealmPrimaryKeyUser.age), ascending: true)
+			$0.filter("age > 10").sorted(by: \.age, ascending: true)
         }
         .sink { _ in } receiveValue: { receivedUsers = $0 }
         .store(in: &subscriptions)
         
         // when
-        persistence.save(objects: users, mapper: DonainRealmPrimaryMapper())
+        persistence.save(objects: users, mapper: DomainRealmPrimaryMapper())
 			.sink()
             .store(in: &subscriptions)
 		
@@ -232,7 +232,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
 			.flatMap {
 				self.persistence.updateAction { realm in
 					let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
-					list.usersList.append(DonainRealmPrimaryMapper().convert(model: newUser))
+					list.usersList.append(DomainRealmPrimaryMapper().convert(model: newUser))
 				}
 			}
 			.sink()
@@ -278,7 +278,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
 				self.persistence.updateAction { realm in
 					let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
 					let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[0].id))!
-					let realmUser = DonainRealmPrimaryMapper().convert(model: modifiedUsers[0])
+					let realmUser = DomainRealmPrimaryMapper().convert(model: modifiedUsers[0])
 					let obj = realm.create(RealmPrimaryKeyUser.self, value: realmUser, update: .all)
 					list.usersList[index] = obj
 				}
@@ -392,7 +392,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
             .flatMap {
 				self.persistence.updateAction { realm in
                     let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
-                    list.usersList.append(DonainRealmPrimaryMapper().convert(model: newUser))
+                    list.usersList.append(DomainRealmPrimaryMapper().convert(model: newUser))
                 }
             }
             .sink()
@@ -433,7 +433,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
 				self.persistence.updateAction { realm in
                     let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
                     let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[0].id))!
-                    let realmUser = DonainRealmPrimaryMapper().convert(model: modifiedUsers[0])
+                    let realmUser = DomainRealmPrimaryMapper().convert(model: modifiedUsers[0])
                     let obj = realm.create(RealmPrimaryKeyUser.self, value: realmUser, update: .all)
                     list.usersList[index] = obj
                 }

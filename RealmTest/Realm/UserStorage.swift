@@ -28,10 +28,6 @@ final class UserStorage {
     func update(user: User) -> AnySinglePublisher<Void, Error> {
         return gateway.save(object: user, mapper: UserMapper(), update: .modified)
     }
-    
-    func save(user: APIUser) -> AnySinglePublisher<Void, Error> {
-        return gateway.save(object: user, mapper: APIUserMapper(), update: .all)
-    }
 	
 	func save(user: User) -> AnySinglePublisher<Void, Error> {
 		return gateway.save(object: user, mapper: UserMapper(), update: .all)

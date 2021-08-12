@@ -15,8 +15,8 @@ struct NotPrimaryKeyUser: Equatable {
 }
 
 final class RealmNotPrimaryKeyUser: Object {
-    @objc dynamic var name: String = ""
-    @objc dynamic var age: Int = 0
+	@Persisted var name: String = ""
+	@Persisted var age: Int = 0
 }
 
 // MARK: - Mappers

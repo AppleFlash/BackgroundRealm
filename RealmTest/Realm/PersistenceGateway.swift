@@ -127,7 +127,7 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
         return realm(scheduler: regularScheduler)
             .tryMap { realm in
 				let persistence = mapper.convert(model: object)
-				let hasPrimaryKey = M.PersistenceModel.primaryKey() != nil
+				let hasPrimaryKey = persistence.objectSchema.primaryKeyProperty != nil
 				
 				try realm.safeWrite {
 					hasPrimaryKey ? realm.add(persistence, update: update) : realm.add(persistence)
@@ -143,7 +143,7 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
         return realm(scheduler: regularScheduler)
             .tryMap { realm in
 				let persistenceObjects = objects.map(mapper.convert)
-				let hasPrimaryKey = M.PersistenceModel.primaryKey() != nil
+				let hasPrimaryKey = persistenceObjects.first?.objectSchema.primaryKeyProperty != nil
 				
 				try realm.safeWrite {
 					hasPrimaryKey ? realm.add(persistenceObjects, update: update) : realm.add(persistenceObjects)

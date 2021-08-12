@@ -230,7 +230,7 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
 
         // given
         let realmMapper = RealmDomainPrimaryMapper()
-        persistence.save(object: object, mapper: DomainRealmUsersKeyedContainerMapper(userMapper: DonainRealmPrimaryMapper()) )
+        persistence.save(object: object, mapper: DomainRealmUsersKeyedContainerMapper(userMapper: DomainRealmPrimaryMapper()) )
             .flatMap { [persistence] in
                 persistence!.listenOrderedArrayChanges(
                     RealmDomainKeyedUserContainerMapper.self,

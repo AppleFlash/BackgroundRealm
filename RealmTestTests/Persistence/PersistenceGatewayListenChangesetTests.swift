@@ -103,7 +103,7 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
 				self.persistence.updateAction { realm in
                     let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
                     let index = list.usersList.index(matching: NSPredicate(format: "id = %@", users[0].id))!
-                    let realmUser = DonainRealmPrimaryMapper().convert(model: modifiedUsers[0])
+                    let realmUser = DomainRealmPrimaryMapper().convert(model: modifiedUsers[0])
                     let obj = realm.create(RealmPrimaryKeyUser.self, value: realmUser, update: .all)
                     list.usersList[index] = obj
                 }
@@ -174,7 +174,7 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
 		// when
 		persistence
 			.updateAction { realm in
-				let mapper = DonainRealmPrimaryMapper()
+				let mapper = DomainRealmPrimaryMapper()
 				let list = realm.objects(RealmKeyedUserContainer.self).filter("id = %@", container.id).first!
 				list.usersList.remove(atOffsets: .init(idsToDelete))
 				

@@ -187,7 +187,7 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
 		var didSave = false
         
         // when
-        let userMapper = DonainRealmPrimaryMapper()
+        let userMapper = DomainRealmPrimaryMapper()
         let mapper = DomainRealmUsersContainerMapper(userMapper: userMapper)
         persistence.save(object: toSave, mapper: mapper, update: .all)
 			.sink(receiveCompletion: { _ in }, receiveValue: { didSave = true })
