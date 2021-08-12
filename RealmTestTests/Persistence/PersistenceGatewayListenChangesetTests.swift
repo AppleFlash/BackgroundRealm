@@ -90,7 +90,7 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
 			filterBlock: { $0.filter("id = %@", "1").first?.usersList }
 		)
         .sink(receiveCompletion: { _ in }, receiveValue: { changeset in
-            apply(changeset: changeset, to: &resultUsersList)
+			changeset.apply(to: &resultUsersList)
         })
         .store(in: &subscriptions)
 
@@ -166,7 +166,7 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
 			}
 			.handleEvents(receiveOutput: { _ in self.listenScheduler.advance() })
 			.sink(receiveCompletion: { _ in }) { receivedChangeset in
-				apply(changeset: receivedChangeset, to: &resultUsersList)
+				receivedChangeset.apply(to: &resultUsersList)
 				callCount += 1
 			}
 			.store(in: &subscriptions)
@@ -201,15 +201,5 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
     
     private func createSameConfigUser(age: Int) -> PrimaryKeyUser {
         return PrimaryKeyUser(id: "\(age)", name: "\(age)", age: age)
-    }
-}
-
-private func apply<T>(changeset: PersistenceChangeset<T>, to array: inout [T]) {
-    switch changeset {
-    case let .initial(objects):
-        array = objects
-    case let .update(deleted, inserted):
-        deleted.forEach { array.remove(at: $0) }
-        inserted.forEach { array.insert($0.item, at: $0.index) }
     }
 }

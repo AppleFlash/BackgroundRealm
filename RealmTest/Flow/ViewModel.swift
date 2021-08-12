@@ -1,44 +1,12 @@
 //
-//  ViewController.swift
+//  ViewModel.swift
 //  RealmTest
 //
-//  Created by Vladislav Sedinkin on 28.05.2021.
+//  Created by Vladislav Sedinkin on 12.08.2021.
 //
 
-import UIKit
+import Foundation
 import Combine
-import SwiftUI
-
-struct ListView: View {
-	@StateObject var viewModel = ViewModel()
-	
-	var body: some View {
-		HStack {
-			Button {
-				viewModel.addUser()
-			} label: {
-				Text("Add user")
-			}
-			
-			Button {
-				viewModel.addUsers()
-			} label: {
-				Text("Add list of users")
-			}
-		}
-
-		List {
-			ForEach(viewModel.users) { user in
-				Text(user.name).onTapGesture {
-					viewModel.didTap(user: user)
-				}
-			}
-			.onDelete { set in
-				viewModel.deleteUser(at: set.first!)
-			}
-		}
-	}
-}
 
 final class ViewModel: ObservableObject {
 	private let userStorage = UserStorage()
@@ -69,18 +37,6 @@ final class ViewModel: ObservableObject {
 				self.handle(changeset: changeset)
 			})
 			.store(in: &subscriptions)
-	}
-	
-	private func handle(changeset: PersistenceChangeset<User>) {
-		switch changeset {
-		case let .initial(users):
-			userSubject.send(users)
-		case let .update(deleted, inserted):
-			var users = userSubject.value
-			deleted.forEach { users.remove(at: $0) }
-			inserted.forEach { users.insert($0.item, at: $0.index) }
-			userSubject.send(users)
-		}
 	}
 	
 	func didTap(user: User) {
@@ -146,10 +102,10 @@ final class ViewModel: ObservableObject {
 			} receiveValue: {}
 			.store(in: &subscriptions)
 	}
-}
-
-extension Publisher {
-	func sink() -> AnyCancellable {
-		return sink(receiveCompletion: { _ in }, receiveValue: { _ in })
+	
+	private func handle(changeset: PersistenceChangeset<User>) {
+		var array = userSubject.value
+		changeset.apply(to: &array)
+		userSubject.send(array)
 	}
 }

@@ -76,18 +76,6 @@ fileprivate final class SingleSink<Upstream: Publisher, Downstream: Subscriber>:
     }
 }
 
-//struct AnySinglePublisher<Output, Failure: Error>: Publisher {
-//    private let publisher: Publishers.Single<AnyPublisher<Output, Failure>>
-//
-//    init<PublisherType: Publisher>(_ publisher: PublisherType) where PublisherType.Output == Output, PublisherType.Failure == Failure {
-//        self.publisher = publisher.eraseToAnyPublisher().asSingle()
-//    }
-//
-//    func receive<S>(subscriber: S) where S : Subscriber, Failure == S.Failure, Output == S.Input {
-//        publisher.receive(subscriber: subscriber)
-//    }
-//}
-
 typealias AnySinglePublisher<Output, Failure: Error> = Publishers.Single<AnyPublisher<Output, Failure>>
 
 extension Publisher {
@@ -99,4 +87,3 @@ extension Publisher {
         return Publishers.Single(upstream: self.eraseToAnyPublisher())
     }
 }
-

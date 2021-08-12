@@ -13,13 +13,14 @@
 		0065838426C53B97005326B0 /* AppUserContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065838326C53B97005326B0 /* AppUserContainer.swift */; };
 		0065839026C53D28005326B0 /* UserContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065838F26C53D28005326B0 /* UserContainer.swift */; };
 		0065839226C53D55005326B0 /* KeyedUserContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065839126C53D55005326B0 /* KeyedUserContainer.swift */; };
+		0065839626C53EEC005326B0 /* ListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065839526C53EEC005326B0 /* ListView.swift */; };
+		0065839826C53F04005326B0 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065839726C53F04005326B0 /* ViewModel.swift */; };
+		0065839A26C53F99005326B0 /* Publisher+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065839926C53F99005326B0 /* Publisher+.swift */; };
 		00762F37269CCB0700BD6330 /* Publisher+Diff.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00762F36269CCB0700BD6330 /* Publisher+Diff.swift */; };
 		00A6D5C826C304CC008E0BFC /* ImmediateScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A6D5C426C304CC008E0BFC /* ImmediateScheduler.swift */; };
 		00A6D5CA26C304CC008E0BFC /* TestScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A6D5C626C304CC008E0BFC /* TestScheduler.swift */; };
 		00A6D5CB26C304CC008E0BFC /* AnyScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A6D5C726C304CC008E0BFC /* AnyScheduler.swift */; };
 		00AAC4992660257C009F43A1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00AAC4982660257C009F43A1 /* AppDelegate.swift */; };
-		00AAC49D2660257C009F43A1 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00AAC49C2660257C009F43A1 /* ViewController.swift */; };
-		00AAC4A02660257C009F43A1 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 00AAC49E2660257C009F43A1 /* Main.storyboard */; };
 		00AAC4A22660257E009F43A1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 00AAC4A12660257E009F43A1 /* Assets.xcassets */; };
 		00AAC4A52660257E009F43A1 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 00AAC4A32660257E009F43A1 /* LaunchScreen.storyboard */; };
 		00B08EE326709C42004D9D2D /* PersistencePrimaryGatewayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B08EE226709C42004D9D2D /* PersistencePrimaryGatewayTests.swift */; };
@@ -59,14 +60,15 @@
 		0065838326C53B97005326B0 /* AppUserContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUserContainer.swift; sourceTree = "<group>"; };
 		0065838F26C53D28005326B0 /* UserContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserContainer.swift; sourceTree = "<group>"; };
 		0065839126C53D55005326B0 /* KeyedUserContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyedUserContainer.swift; sourceTree = "<group>"; };
+		0065839526C53EEC005326B0 /* ListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListView.swift; sourceTree = "<group>"; };
+		0065839726C53F04005326B0 /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
+		0065839926C53F99005326B0 /* Publisher+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Publisher+.swift"; sourceTree = "<group>"; };
 		00762F36269CCB0700BD6330 /* Publisher+Diff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Publisher+Diff.swift"; sourceTree = "<group>"; };
 		00A6D5C426C304CC008E0BFC /* ImmediateScheduler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImmediateScheduler.swift; sourceTree = "<group>"; };
 		00A6D5C626C304CC008E0BFC /* TestScheduler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestScheduler.swift; sourceTree = "<group>"; };
 		00A6D5C726C304CC008E0BFC /* AnyScheduler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnyScheduler.swift; sourceTree = "<group>"; };
 		00AAC4952660257C009F43A1 /* RealmTest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RealmTest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		00AAC4982660257C009F43A1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		00AAC49C2660257C009F43A1 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
-		00AAC49F2660257C009F43A1 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		00AAC4A12660257E009F43A1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		00AAC4A42660257E009F43A1 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		00AAC4A62660257E009F43A1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -137,6 +139,24 @@
 			path = User;
 			sourceTree = "<group>";
 		};
+		0065839326C53EC9005326B0 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				00BBF68C2674A13F0033844D /* Single.swift */,
+				0065839926C53F99005326B0 /* Publisher+.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		0065839426C53EE0005326B0 /* Flow */ = {
+			isa = PBXGroup;
+			children = (
+				0065839526C53EEC005326B0 /* ListView.swift */,
+				0065839726C53F04005326B0 /* ViewModel.swift */,
+			);
+			path = Flow;
+			sourceTree = "<group>";
+		};
 		00A6D5C326C304CC008E0BFC /* Schedulers */ = {
 			isa = PBXGroup;
 			children = (
@@ -169,16 +189,15 @@
 		00AAC4972660257C009F43A1 /* RealmTest */ = {
 			isa = PBXGroup;
 			children = (
+				0065839426C53EE0005326B0 /* Flow */,
+				0065839326C53EC9005326B0 /* Helpers */,
 				0065838226C53AA4005326B0 /* Models */,
 				00A6D5C326C304CC008E0BFC /* Schedulers */,
 				00B4580E266028FE00D15EFD /* Realm */,
 				00AAC4982660257C009F43A1 /* AppDelegate.swift */,
-				00AAC49C2660257C009F43A1 /* ViewController.swift */,
-				00AAC49E2660257C009F43A1 /* Main.storyboard */,
 				00AAC4A12660257E009F43A1 /* Assets.xcassets */,
 				00AAC4A32660257E009F43A1 /* LaunchScreen.storyboard */,
 				00AAC4A62660257E009F43A1 /* Info.plist */,
-				00BBF68C2674A13F0033844D /* Single.swift */,
 				0026291826B1DDBC00668D1F /* main.swift */,
 			);
 			path = RealmTest;
@@ -324,7 +343,6 @@
 			files = (
 				00AAC4A52660257E009F43A1 /* LaunchScreen.storyboard in Resources */,
 				00AAC4A22660257E009F43A1 /* Assets.xcassets in Resources */,
-				00AAC4A02660257C009F43A1 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -368,14 +386,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				00F6202A267881A700107F16 /* PersistenceGatewayProtocol.swift in Sources */,
-				00AAC49D2660257C009F43A1 /* ViewController.swift in Sources */,
+				0065839A26C53F99005326B0 /* Publisher+.swift in Sources */,
 				0026291926B1DDBC00668D1F /* main.swift in Sources */,
+				0065839626C53EEC005326B0 /* ListView.swift in Sources */,
 				00A6D5CB26C304CC008E0BFC /* AnyScheduler.swift in Sources */,
 				0065838426C53B97005326B0 /* AppUserContainer.swift in Sources */,
 				00AAC4992660257C009F43A1 /* AppDelegate.swift in Sources */,
 				00144D1B2666668D00EE7664 /* UserStorage.swift in Sources */,
 				00B4581426602BE700D15EFD /* User.swift in Sources */,
 				00A6D5C826C304CC008E0BFC /* ImmediateScheduler.swift in Sources */,
+				0065839826C53F04005326B0 /* ViewModel.swift in Sources */,
 				00BBF68D2674A13F0033844D /* Single.swift in Sources */,
 				00B458102660291900D15EFD /* PersistenceGateway.swift in Sources */,
 				00B4581226602BD200D15EFD /* Mapper.swift in Sources */,
@@ -414,14 +434,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		00AAC49E2660257C009F43A1 /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				00AAC49F2660257C009F43A1 /* Base */,
-			);
-			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
 		00AAC4A32660257E009F43A1 /* LaunchScreen.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (

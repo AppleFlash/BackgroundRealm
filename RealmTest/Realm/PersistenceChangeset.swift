@@ -24,3 +24,15 @@ extension PersistenceChangeset: Equatable where T: Equatable {
 		}
 	}
 }
+
+extension PersistenceChangeset {
+	func apply(to array: inout [T]) {
+		switch self {
+		case let .initial(users):
+			array = users
+		case let .update(deleted, inserted):
+			deleted.forEach { array.remove(at: $0) }
+			inserted.forEach { array.insert($0.item, at: $0.index) }
+		}
+	}
+}
