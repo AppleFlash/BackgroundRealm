@@ -58,7 +58,7 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
         return realm(scheduler: listenScheduler)
             .map { $0.objects(M.PersistenceModel.self) } // Получает список объектов для типа
             .map { filterBlock($0) } // Фильтрует список объектов для получения только интересующего объекта
-            .flatMap(\.collectionPublisher) // Наблюдает за изменением фильтрованных объектов
+            .flatMap(\.collectionPublisher) // Наблюдает за изменением фильтрованных объектов. Работает даже, если объект не существовал на момент подписки
             .threadSafeReference()
             .receive(on: regularScheduler)
             .compactMap { $0.last } // Результат может содержать массив объектов, если поиск осуществлялся не по primary key, либо, если primary key нет вовсе.
@@ -174,8 +174,11 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
     }
 	
 	func deleteAll() {
-		let realm = try! Realm(configuration: configuration)
-		try! realm.safeWrite {
+		guard let realm = try? Realm(configuration: configuration) else {
+			return
+		}
+		
+		try? realm.safeWrite {
 			realm.deleteAll()
 		}
 	}

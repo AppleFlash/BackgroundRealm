@@ -42,7 +42,15 @@ protocol PersistenceGatewayProtocol: AnyObject {
         range: Range<Int>?,
         filterBlock: @escaping GetResultBlock<M>
     ) -> AnyPublisher<[M.DomainModel], Error>
-    
+	
+	/// Наблюдает за изменением элементов в листе.
+	/// Наблюдение будет валидно, даже, если объекты не существовали на момент начала наблюдение и появились после.
+	/// На выходе получаем список изменений (вставка, удаление), состоящий из типа изменения, жлемента и/или порядокового индекса
+	/// - Parameters:
+	///   - sourceType: исходный тип - контейнер, содержащий лист
+	///   - mapper: маппер для перевода элементов листа в доменные объекты
+	///   - filterBlock: блок сначала позволяет получить нужный контейнер, фильтроваф, например, по идентификатору, а, далее получить нужный List
+	///   - comparator: блок для сравнения объектов. На основе блока формируется список изменений
     func listenOrderedArrayChanges<Source: PersistenceToDomainMapper, Target: PersistenceToDomainMapper>(
         _ sourceType: Source.Type,
         mapper: Target,
@@ -50,6 +58,13 @@ protocol PersistenceGatewayProtocol: AnyObject {
 		comparator: @escaping (Target.DomainModel, Target.DomainModel) -> Bool
 	) -> AnyPublisher<PersistenceChangeset<Target.DomainModel>, Error>
 	
+	/// Наблюдает за изменением элементов в листе.
+	/// Наблюдение будет валидно, даже, если объекты не существовали на момент начала наблюдение и появились после.
+	/// На выходе получаем список изменений (вставка, удаление), состоящий из типа изменения, жлемента и/или порядокового индекса.
+	/// - Parameters:
+	///   - sourceType: исходный тип - контейнер, содержащий лист
+	///   - mapper: маппер для перевода элементов листа в доменные объекты
+	///   - filterBlock: блок сначала позволяет получить нужный контейнер, фильтроваф, например, по идентификатору, а, далее получить нужный List
 	func listenOrderedArrayChanges<Source: PersistenceToDomainMapper, Target: PersistenceToDomainMapper>(
 		_ sourceType: Source.Type,
 		mapper: Target,
@@ -80,6 +95,7 @@ protocol PersistenceGatewayProtocol: AnyObject {
     ///   - filterBlock: блок фильтрации
     func count<T: ObjectToPersistenceMapper>(_ type: T.Type, filterBlock: @escaping SaveResultBlock<T>) -> AnySinglePublisher<Int, Error>
 	
+	/// Очищает рилм
 	func deleteAll()
 }
 

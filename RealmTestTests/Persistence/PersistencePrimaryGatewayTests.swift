@@ -162,11 +162,11 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
         // when
         persistence
             .save(objects: users, mapper: DomainRealmPrimaryMapper())
-            .flatMap { [persistence] in
-                persistence!.delete(DomainRealmPrimaryMapper.self) { $0.filter("id = %@", users.first!.id) }
+            .flatMap {
+				self.persistence.delete(DomainRealmPrimaryMapper.self) { $0.filter("id = %@", users.first!.id) }
             }
-            .flatMap { [persistence] in
-                persistence!.count(DomainRealmPrimaryMapper.self) { $0 }
+            .flatMap {
+				self.persistence.count(DomainRealmPrimaryMapper.self) { $0 }
             }
             .sink { _ in } receiveValue: { countAfterDelete = $0 }
             .store(in: &subscriptions)
@@ -176,6 +176,6 @@ final class PersistencePrimaryGatewayTests: XCTestCase {
     }
     
     private func createUser(name: String = UUID().uuidString, age: Int = .random(in: 10...80)) -> PrimaryKeyUser {
-        return PrimaryKeyUser(id: "\(Int.random(in: 0...100))", name: name, age: age)
+		return PrimaryKeyUser(id: "\(name.hash)", name: name, age: age)
     }
 }
