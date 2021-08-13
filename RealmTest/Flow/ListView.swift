@@ -11,25 +11,38 @@ struct ListView: View {
 	@StateObject var viewModel = ViewModel()
 	
 	var body: some View {
-		HStack {
-			Button {
-				viewModel.addUser()
-			} label: {
-				Text("Add user")
-			}
+		VStack(spacing: 8) {
+			Text("Tap user's name to modify")
 			
-			Button {
-				viewModel.addUsers()
-			} label: {
-				Text("Add list of users")
-			}
+			HStack {
+				Button {
+					viewModel.addUser()
+				} label: {
+					Text("Add user")
+				}
+				
+				Spacer(minLength: 0)
+				
+				Button {
+					viewModel.addUsers()
+				} label: {
+					Text("Add list of users")
+				}
+			}.padding(.horizontal, 16)
 		}
 
 		List {
 			ForEach(viewModel.users) { user in
-				Text(user.name).onTapGesture {
-					viewModel.didTap(user: user)
+				VStack(alignment: .leading, spacing: 8) {
+					Text("Name: \(user.name)").onTapGesture {
+						viewModel.didTap(user: user)
+					}
+					Text("Role: \(user.role.rawValue)")
+					if let modifyCount = user.modifyCount {
+						Text("Modify count: \(modifyCount)")
+					}
 				}
+				
 			}
 			.onDelete { set in
 				viewModel.deleteUser(at: set.first!)

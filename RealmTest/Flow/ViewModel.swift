@@ -41,7 +41,9 @@ final class ViewModel: ObservableObject {
 	
 	func didTap(user: User) {
 		var changedUser = user
-		changedUser.name = "m" + changedUser.name
+		var oldCount = changedUser.modifyCount ?? 0
+		changedUser.modifyCount = oldCount + 1
+		
 		userStorage.updateInContainer(user: changedUser)
 			.sink { result in
 				switch result {
@@ -74,7 +76,10 @@ final class ViewModel: ObservableObject {
 	
 	func addUser() {
 		let id = UUID()
-		let user = User(id: id, name: "user \(id.uuidString)")
+		let roleIndex = Int.random(in: 0..<Role.allCases.count)
+		let role = Role.allCases[roleIndex]
+		
+		let user = User(id: id, role: role, name: "user \(id.uuidString)", modifyCount: nil)
 		userStorage.saveToContainer(user: user)
 			.sink { result in
 				switch result {
@@ -90,7 +95,11 @@ final class ViewModel: ObservableObject {
 	func addUsers() {
 		let ids = (0...3).map { _ in UUID() }
 		
-		let users = ids.map { User(id: $0, name: "user \($0.uuidString)") }
+		let users: [User] = ids.map {
+			let roleIndex = Int.random(in: 0..<Role.allCases.count)
+			let role = Role.allCases[roleIndex]
+			return User(id: $0, role: role, name: "user \($0.uuidString)", modifyCount: nil)
+		}
 		userStorage.saveToContainer(users: users)
 			.sink { result in
 				switch result {
