@@ -93,7 +93,7 @@ final class UserStorage {
 				throw UserStorageError.deleteNonExistingUser
 			}
 			
-			container.usersList.remove(at: index)
+			realm.delete(container.usersList[index])
 		}
 	}
 	
