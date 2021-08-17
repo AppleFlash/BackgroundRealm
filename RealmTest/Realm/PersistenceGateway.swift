@@ -16,14 +16,28 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
     private let configuration: Realm.Configuration
 	private let regularScheduler: AnySchedulerOf<DispatchQueue>
 	private let listenScheduler: AnySchedulerOf<RunLoop>
+	private let listenOn: ListenOn
+//	private var _listenWorker: ListenWorker?
+//
+//	private var liveListenWorker: ListenWorker {
+//		if let worker = _listenWorker {
+//			return worker
+//		} else {
+//			let worker = ListenWorker(config: configuration)
+//			_listenWorker = worker
+//			return worker
+//		}
+//	}
     
     init(
 		regularScheduler: AnySchedulerOf<DispatchQueue>,
 		listenScheduler: AnySchedulerOf<RunLoop> = .main,
+		listenOn: ListenOn = .thread,
 		configuration: Realm.Configuration = .init()
 	) {
 		self.regularScheduler = regularScheduler
 		self.listenScheduler = listenScheduler
+		self.listenOn = listenOn
         self.configuration = configuration
     }
     
@@ -55,12 +69,10 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
     // MARK: Listen
     
     func listen<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnyPublisher<M.DomainModel, Error> {
-        return realm(scheduler: listenScheduler)
+        return Publishers.ListenRealm(config: configuration, listenOn: listenOn)
             .map { $0.objects(M.PersistenceModel.self) } // Получает список объектов для типа
             .map { filterBlock($0) } // Фильтрует список объектов для получения только интересующего объекта
             .flatMap(\.collectionPublisher) // Наблюдает за изменением фильтрованных объектов. Работает даже, если объект не существовал на момент подписки
-            .freeze()
-            .receive(on: regularScheduler)
             .compactMap { $0.last } // Результат может содержать массив объектов, если поиск осуществлялся не по primary key, либо, если primary key нет вовсе.
                                     // Для обработки ситуации, когда нет primary key берется `last`, а не `first`
             .map(mapper.convert)
@@ -73,7 +85,7 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
 		filterBlock: @escaping (Results<Source.PersistenceModel>) -> List<Target.PersistenceModel>?,
 		comparator: @escaping (Target.DomainModel, Target.DomainModel) -> Bool
 	) -> AnyPublisher<PersistenceChangeset<Target.DomainModel>, Error> {
-		return realm(scheduler: listenScheduler)
+		return Publishers.ListenRealm(config: configuration, listenOn: listenOn)
 			.map { $0.objects(Source.PersistenceModel.self) }
 			.flatMap {
 				$0.collectionPublisher
@@ -82,8 +94,6 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
 			}
 			.compactMap { filterBlock($0) }
 			.flatMap(\.collectionPublisher)
-			.freeze()
-			.receive(on: regularScheduler)
 			.map { $0.map(mapper.convert) }
 			.diff(comparator: comparator)
 			.eraseToAnyPublisher()
@@ -106,12 +116,10 @@ final class PersistenceGateway: PersistenceGatewayProtocol {
         range: Range<Int>?,
         filterBlock: @escaping GetResultBlock<M>
     ) -> AnyPublisher<[M.DomainModel], Error> {
-        return realm(scheduler: listenScheduler)
+        return Publishers.ListenRealm(config: configuration, listenOn: listenOn)
             .map { $0.objects(M.PersistenceModel.self) }
 			.map { filterBlock($0) }
             .flatMap(\.collectionPublisher)
-            .freeze()
-            .receive(on: regularScheduler)
             .map { results -> [M.PersistenceModel] in
                 // Если range существует - получаем слайс из коллекции, иначе берём коллекцию целиком
                 let slice = range.map { $0.clamped(to: 0..<results.count) }.map { Array(results[$0]) }

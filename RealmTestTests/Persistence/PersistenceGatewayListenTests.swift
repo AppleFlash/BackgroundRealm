@@ -21,7 +21,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         
 		listenScheduler = RunLoop.test
         let config = Realm.Configuration(inMemoryIdentifier: "in memory listen test realm \(UUID().uuidString)")
-		persistence = PersistenceGateway(regularScheduler: .immediate, listenScheduler: listenScheduler.eraseToAnyScheduler(), configuration: config)
+		persistence = PersistenceGateway(regularScheduler: .immediate, listenOn: .scheduler(listenScheduler.eraseToAnyScheduler()), configuration: config)
     }
     
     override func tearDown() {

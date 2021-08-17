@@ -102,6 +102,9 @@ final class UserStorage {
 			AppRealmDomainUserContainerMapper.self,
 			mapper: RealmUserMapper()
 		) { [containerId] in $0.filter("id = %@", containerId).first?.usersList }
+		.handleEvents(receiveOutput: { _ in
+			print("Receive value")
+		}).eraseToAnyPublisher()
 	}
 	
 	func saveContainer() -> AnySinglePublisher<Void, Error> {

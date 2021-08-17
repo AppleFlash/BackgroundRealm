@@ -8,8 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		00144D1B2666668D00EE7664 /* UserStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00144D1A2666668D00EE7664 /* UserStorage.swift */; };
+		001FC00826CBED5F00795791 /* ListenRealm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 001FC00726CBED5F00795791 /* ListenRealm.swift */; };
 		0026291926B1DDBC00668D1F /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0026291826B1DDBC00668D1F /* main.swift */; };
 		0026291D26B1DDE800668D1F /* TestsAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0026291C26B1DDE800668D1F /* TestsAppDelegate.swift */; };
+		0039B01326CCDB3F006B8DA2 /* ThreadPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0039B01226CCDB3F006B8DA2 /* ThreadPool.swift */; };
+		0039B01526CCDBD6006B8DA2 /* RunLoopThreadWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0039B01426CCDBD6006B8DA2 /* RunLoopThreadWorker.swift */; };
 		0065838426C53B97005326B0 /* AppUserContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065838326C53B97005326B0 /* AppUserContainer.swift */; };
 		0065839026C53D28005326B0 /* UserContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065838F26C53D28005326B0 /* UserContainer.swift */; };
 		0065839226C53D55005326B0 /* KeyedUserContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065839126C53D55005326B0 /* KeyedUserContainer.swift */; };
@@ -55,8 +58,11 @@
 
 /* Begin PBXFileReference section */
 		00144D1A2666668D00EE7664 /* UserStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserStorage.swift; sourceTree = "<group>"; };
+		001FC00726CBED5F00795791 /* ListenRealm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenRealm.swift; sourceTree = "<group>"; };
 		0026291826B1DDBC00668D1F /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		0026291C26B1DDE800668D1F /* TestsAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestsAppDelegate.swift; sourceTree = "<group>"; };
+		0039B01226CCDB3F006B8DA2 /* ThreadPool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadPool.swift; sourceTree = "<group>"; };
+		0039B01426CCDBD6006B8DA2 /* RunLoopThreadWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunLoopThreadWorker.swift; sourceTree = "<group>"; };
 		0065838326C53B97005326B0 /* AppUserContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUserContainer.swift; sourceTree = "<group>"; };
 		0065838F26C53D28005326B0 /* UserContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserContainer.swift; sourceTree = "<group>"; };
 		0065839126C53D55005326B0 /* KeyedUserContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyedUserContainer.swift; sourceTree = "<group>"; };
@@ -114,6 +120,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0039B01126CCDB33006B8DA2 /* ThreadPool */ = {
+			isa = PBXGroup;
+			children = (
+				0039B01226CCDB3F006B8DA2 /* ThreadPool.swift */,
+				0039B01426CCDBD6006B8DA2 /* RunLoopThreadWorker.swift */,
+			);
+			path = ThreadPool;
+			sourceTree = "<group>";
+		};
 		0065838226C53AA4005326B0 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -144,6 +159,7 @@
 			children = (
 				00BBF68C2674A13F0033844D /* Single.swift */,
 				0065839926C53F99005326B0 /* Publisher+.swift */,
+				001FC00726CBED5F00795791 /* ListenRealm.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -189,6 +205,7 @@
 		00AAC4972660257C009F43A1 /* RealmTest */ = {
 			isa = PBXGroup;
 			children = (
+				0039B01126CCDB33006B8DA2 /* ThreadPool */,
 				0065839426C53EE0005326B0 /* Flow */,
 				0065839326C53EC9005326B0 /* Helpers */,
 				0065838226C53AA4005326B0 /* Models */,
@@ -386,6 +403,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				00F6202A267881A700107F16 /* PersistenceGatewayProtocol.swift in Sources */,
+				0039B01326CCDB3F006B8DA2 /* ThreadPool.swift in Sources */,
 				0065839A26C53F99005326B0 /* Publisher+.swift in Sources */,
 				0026291926B1DDBC00668D1F /* main.swift in Sources */,
 				0065839626C53EEC005326B0 /* ListView.swift in Sources */,
@@ -396,8 +414,10 @@
 				00B4581426602BE700D15EFD /* User.swift in Sources */,
 				00A6D5C826C304CC008E0BFC /* ImmediateScheduler.swift in Sources */,
 				0065839826C53F04005326B0 /* ViewModel.swift in Sources */,
+				001FC00826CBED5F00795791 /* ListenRealm.swift in Sources */,
 				00BBF68D2674A13F0033844D /* Single.swift in Sources */,
 				00B458102660291900D15EFD /* PersistenceGateway.swift in Sources */,
+				0039B01526CCDBD6006B8DA2 /* RunLoopThreadWorker.swift in Sources */,
 				00B4581226602BD200D15EFD /* Mapper.swift in Sources */,
 				00A6D5CA26C304CC008E0BFC /* TestScheduler.swift in Sources */,
 				00F62025267880B600107F16 /* ChangesetItem.swift in Sources */,

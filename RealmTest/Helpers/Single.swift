@@ -50,12 +50,10 @@ fileprivate final class SingleSink<Upstream: Publisher, Downstream: Subscriber>:
     }
     
     func receive(subscription: Subscription) {
-        print(subscription)
         subscription.request(.max(1))
     }
     
     func receive(_ input: Upstream.Output) -> Subscribers.Demand {
-        print(input)
         element = input
         _ = downstream.receive(input)
         downstream.receive(completion: .finished)
