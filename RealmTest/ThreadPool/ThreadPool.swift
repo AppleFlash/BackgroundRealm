@@ -10,32 +10,35 @@ import Foundation
 final class ThreadPool {
 	static let shared: ThreadPool = .init()
 	
-	private var mutex: pthread_mutex_t
-	private var workers: [RunLoopThreadWorker] = []
+	private let lock = NSLock()
+	private var workers = NSHashTable<RunLoopThreadWorker>.weakObjects()
 	
-	init() {
-		self.mutex = pthread_mutex_t()
+	private init() {
 	}
 	
 	func start(name: String, block: @escaping () -> Void) -> ThreadWorker {
-		pthread_mutex_lock(&mutex)
-		workers.removeAll { $0.isCancelled }
+		lock.lock()
+		defer {
+			lock.unlock()
+		}
+//		workers.removeAll { $0.isCancelled }
+		workers.allObjects.filter { !$0.isExecuting }.forEach {
+			workers.remove($0)
+		}
 		
 		let worker: RunLoopThreadWorker
-		if let runningWorker = workers.first(where: { !$0.isCancelled }) {
+		if let runningWorker = workers.allObjects.first(where: \.isExecuting) {
+			print("DEBUG: Use existing worker for '\(name)'")
 			worker = runningWorker
 		} else {
+			print("DEBUG: Create new worker for '\(name)'")
 			worker = RunLoopThreadWorker(name: name)
-			workers.append(worker)
+//			workers.allObjects.append(worker)
+			workers.add(worker)
 		}
-		pthread_mutex_unlock(&mutex)
 		
 		worker.start(block)
 		
 		return worker
-	}
-	
-	deinit {
-		pthread_mutex_destroy(&mutex)
 	}
 }

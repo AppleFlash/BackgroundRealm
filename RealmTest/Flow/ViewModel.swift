@@ -11,6 +11,8 @@ import Combine
 final class ViewModel: ObservableObject {
 	private let userStorage = UserStorage()
 	private var subscriptions = Set<AnyCancellable>()
+	private var cancel1: AnyCancellable?
+	private var cancel2: AnyCancellable?
 	
 	private let userSubject = CurrentValueSubject<[User], Never>([])
 	
@@ -30,12 +32,75 @@ final class ViewModel: ObservableObject {
 			.store(in: &subscriptions)
 		
 		userStorage.saveContainer()
-			.flatMap { [userStorage] in
-				userStorage.listenChangesetContainer()
-			}
-			.sink(receiveCompletion: { _ in }, receiveValue: { [unowned self] changeset in
-				self.handle(changeset: changeset)
+//			.flatMap { [weak self] _ in
+//				self?.startListen()
+//			}
+			.sink(receiveCompletion: { _ in }, receiveValue: { [unowned self] _ in
+				self.startListen()
+//				self.startListen2()
 			})
+			.store(in: &subscriptions)
+	}
+	
+	private func startListen() {
+		print("DEBUG: Res 1 = Will start")
+
+		cancel1 = userStorage.listenChangesetContainer()
+			.handleEvents(receiveCompletion: { res in
+				print("DEBUG: Res 1 = \(res)")
+			})
+			.sink(
+				receiveCompletion: { [weak self] res in
+					switch res {
+					case .failure:
+						self?.startListen()
+					case .finished:
+						break
+					}
+				},
+				receiveValue: { [unowned self] changeset in
+					print("update1. Thread = \(Thread.current.name)")
+					self.handle(changeset: changeset)
+				}
+			)
+		
+		cancel2 = userStorage.listenChangesetContainer()
+			.handleEvents(receiveCompletion: { res in
+				print("Res 2 = \(res)")
+			})
+			.sink(
+				receiveCompletion: { [weak self] res in
+					switch res {
+					case .failure:
+						print("cancel1 = \(self!.cancel1), cancel2 = \(self!.cancel2),")
+					case .finished:
+						break
+					}
+				},
+				receiveValue: { [unowned self] changeset in
+					print("update2. Thread = \(Thread.current.name)")
+				}
+			)
+	}
+	
+	private func startListen2() {
+		userStorage.listenChangesetContainer()
+			.handleEvents(receiveCompletion: { res in
+				print("Res 2 = \(res)")
+			})
+			.sink(
+				receiveCompletion: { [weak self] res in
+					switch res {
+					case .failure:
+						self?.startListen2()
+					case .finished:
+						break
+					}
+				},
+				receiveValue: { [unowned self] changeset in
+					print("update2. Thread = \(Thread.current.name)")
+				}
+			)
 			.store(in: &subscriptions)
 	}
 	

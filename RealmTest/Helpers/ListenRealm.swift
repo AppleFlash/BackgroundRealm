@@ -39,7 +39,7 @@ private extension Publishers.ListenRealm {
 		typealias Input = Realm.Configuration
 		typealias Failure = Error
 		
-		private let publisher: Publishers.ListenRealm
+		private var publisher: Publishers.ListenRealm?
 		private var subscriber: S?
 		private var worker: ThreadWorker?
 		
@@ -60,12 +60,22 @@ private extension Publishers.ListenRealm {
 		}
 		
 		private func createRealm() {
+			guard let publisher = publisher else {
+				return
+			}
+			
 			do {
 				let _realm = try Realm(configuration: publisher.config)
+				Swift.print("DEBUG: New realm")
 				_ = subscriber?.receive(_realm)
 			} catch {
+				Swift.print("DEBUG: New realm error \(error)")
 				subscriber?.receive(completion: .failure(error))
 			}
+		}
+		
+		deinit {
+			Swift.print("here")
 		}
 	}
 }
@@ -76,6 +86,7 @@ extension Publishers.ListenRealm.Inner: Subscription {
 	func cancel() {
 		worker?.stop()
 		subscriber = nil
+		publisher = nil
 	}
 }
 
@@ -90,6 +101,6 @@ extension Publishers.ListenRealm.Inner: Subscriber {
 	
 	func receive(completion: Subscribers.Completion<Error>) {
 		Swift.print("Receive completion \(completion)")
-		subscriber?.receive(completion: completion)
+//		subscriber?.receive(completion: completion)
 	}
 }

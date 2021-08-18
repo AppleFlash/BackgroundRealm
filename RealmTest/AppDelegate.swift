@@ -21,6 +21,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 		window?.rootViewController = nav
 		window?.makeKeyAndVisible()
+		
+//		let count = 20
+//		var workers: [ThreadWorker] = []
+//		DispatchQueue.concurrentPerform(iterations: count) { operation in
+//			let worker = ThreadPool.shared.start(name: "TestThread \(operation)") {
+//				print("Operation #\(operation) has executed on thread \(Thread.current.name)")
+//			}
+//			workers.append(worker)
+//		}
+//
+//		Thread.sleep(forTimeInterval: 2)
+//		print("Will start STOP operation")
+//
+//		DispatchQueue.concurrentPerform(iterations: count) { operation in
+//			workers[operation].stop()
+//		}
+		
+		
         return true
     }
 }

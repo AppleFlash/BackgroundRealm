@@ -11,19 +11,19 @@ import RealmSwift
 
 protocol PersistenceGatewayProtocol: AnyObject {
     /// Позволяет выполнять любое действие с рилмом. Все действия происходит в транзакции записи
-	func updateAction(_ action: @escaping (Realm) throws -> Void) -> AnySinglePublisher<Void, Error>
+	func updateAction(_ action: @escaping (Realm) throws -> Void) -> AnyPublisher<Void, Error>
     
     /// Получает объект из рилма
     /// - Parameters:
     ///   - mapper: маппер для конвертации объекта рилма в доменный объект
     ///   - filterBlock: фильтр, который является основным инструментом поиска нужного элемента
-    func get<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<M.DomainModel?, Error>
+    func get<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnyPublisher<M.DomainModel?, Error>
     
     /// Получает массив объектов из рилма
     /// - Parameters:
     ///   - mapper: маппер для конвертации объектов рилма в доменные объекты
     ///   - filterBlock: фильтр, который является основным инструментом поиска нужных элементов
-    func getArray<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<[M.DomainModel], Error>
+    func getArray<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnyPublisher<[M.DomainModel], Error>
     
     /// Наблюдает за изменением объекта. Наблюдение будет валидно, даже, если объект не существовал на момент начала наблюдение и появился после
     /// - Parameters:
@@ -75,36 +75,36 @@ protocol PersistenceGatewayProtocol: AnyObject {
     /// - Parameters:
     ///   - object: объект для сохранения
     ///   - mapper: маппер для конвертации доменного объекта в рилм
-    func save<M: ObjectToPersistenceMapper>(object: M.Model, mapper: M, update: Realm.UpdatePolicy) -> AnySinglePublisher<Void, Error>
+    func save<M: ObjectToPersistenceMapper>(object: M.Model, mapper: M, update: Realm.UpdatePolicy) -> AnyPublisher<Void, Error>
     
     /// Сохраняет массив объектов в базу
     /// - Parameters:
     ///   - objects: объект для сохранения
     ///   - mapper: маппер для конвертации доменных объектов в рилм
-    func save<M: ObjectToPersistenceMapper>(objects: [M.Model], mapper: M, update: Realm.UpdatePolicy) -> AnySinglePublisher<Void, Error>
+    func save<M: ObjectToPersistenceMapper>(objects: [M.Model], mapper: M, update: Realm.UpdatePolicy) -> AnyPublisher<Void, Error>
     
     /// Удаляет объект, соответствующий фильтру, из базы
     /// - Parameters:
     ///   - type: тип удаляемого объекта
     ///   - deleteHandler: поиск удаляемого объекта
-    func delete<M: ObjectToPersistenceMapper>(_ type: M.Type, deleteHandler: @escaping SaveResultBlock<M>) -> AnySinglePublisher<Void, Error>
+    func delete<M: ObjectToPersistenceMapper>(_ type: M.Type, deleteHandler: @escaping SaveResultBlock<M>) -> AnyPublisher<Void, Error>
     
     /// Возвращает количество объектов в базе, удовлетворяющих фильтру
     /// - Parameters:
     ///   - type: тип объектов для определения количества
     ///   - filterBlock: блок фильтрации
-    func count<T: ObjectToPersistenceMapper>(_ type: T.Type, filterBlock: @escaping SaveResultBlock<T>) -> AnySinglePublisher<Int, Error>
+    func count<T: ObjectToPersistenceMapper>(_ type: T.Type, filterBlock: @escaping SaveResultBlock<T>) -> AnyPublisher<Int, Error>
 	
 	/// Очищает рилм
 	func deleteAll()
 }
 
 extension PersistenceGatewayProtocol {
-    func get<M: PersistenceToDomainMapper>(mapper: M) -> AnySinglePublisher<M.DomainModel?, Error> {
+    func get<M: PersistenceToDomainMapper>(mapper: M) -> AnyPublisher<M.DomainModel?, Error> {
         get(mapper: mapper) { $0 }
     }
     
-    func getArray<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnySinglePublisher<[M.DomainModel], Error> {
+    func getArray<M: PersistenceToDomainMapper>(mapper: M, filterBlock: @escaping GetResultBlock<M>) -> AnyPublisher<[M.DomainModel], Error> {
         getArray(mapper: mapper) { $0 }
     }
     
@@ -116,15 +116,15 @@ extension PersistenceGatewayProtocol {
         listenArray(mapper: mapper, range: nil) { $0 }
     }
     
-    func save<M: ObjectToPersistenceMapper>(object: M.Model, mapper: M, update: Realm.UpdatePolicy = .all) -> AnySinglePublisher<Void, Error> {
+    func save<M: ObjectToPersistenceMapper>(object: M.Model, mapper: M, update: Realm.UpdatePolicy = .all) -> AnyPublisher<Void, Error> {
         save(object: object, mapper: mapper, update: update)
     }
     
-    func save<M: ObjectToPersistenceMapper>(objects: [M.Model], mapper: M, update: Realm.UpdatePolicy = .all) -> AnySinglePublisher<Void, Error> {
+    func save<M: ObjectToPersistenceMapper>(objects: [M.Model], mapper: M, update: Realm.UpdatePolicy = .all) -> AnyPublisher<Void, Error> {
         save(objects: objects, mapper: mapper, update: update)
     }
     
-    func count<T: ObjectToPersistenceMapper>(_ type: T.Type) -> AnySinglePublisher<Int, Error> {
+    func count<T: ObjectToPersistenceMapper>(_ type: T.Type) -> AnyPublisher<Int, Error> {
         count(type) { $0 }
     }
 }
