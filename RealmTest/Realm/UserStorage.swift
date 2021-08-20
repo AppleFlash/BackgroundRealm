@@ -25,15 +25,15 @@ final class UserStorage {
 		gateway = PersistenceGateway(regularScheduler: queue.eraseToAnyScheduler(), configuration: config)
     }
     
-    func update(user: User) -> AnySinglePublisher<Void, Error> {
+    func update(user: User) -> AnyPublisher<Void, Error> {
         return gateway.save(object: user, mapper: UserMapper(), update: .modified)
     }
 	
-	func save(user: User) -> AnySinglePublisher<Void, Error> {
+	func save(user: User) -> AnyPublisher<Void, Error> {
 		return gateway.save(object: user, mapper: UserMapper(), update: .all)
 	}
 	
-	func saveToContainer(user: User) -> AnySinglePublisher<Void, Error> {
+	func saveToContainer(user: User) -> AnyPublisher<Void, Error> {
 		let id = containerId
 		return gateway.updateAction { realm in
 			let objects = realm.objects(AppRealmUserContainer.self).filter("id = %@", id)
@@ -46,7 +46,7 @@ final class UserStorage {
 		}
 	}
 	
-	func saveToContainer(users: [User]) -> AnySinglePublisher<Void, Error> {
+	func saveToContainer(users: [User]) -> AnyPublisher<Void, Error> {
 		let id = containerId
 		return gateway.updateAction { realm in
 			let objects = realm.objects(AppRealmUserContainer.self).filter("id = %@", id)
@@ -60,7 +60,7 @@ final class UserStorage {
 		}
 	}
 	
-	func updateInContainer(user: User) -> AnySinglePublisher<Void, Error> {
+	func updateInContainer(user: User) -> AnyPublisher<Void, Error> {
 		let id = containerId
 		return gateway.updateAction { realm in
 			let objects = realm.objects(AppRealmUserContainer.self).filter("id = %@", id)
@@ -81,7 +81,7 @@ final class UserStorage {
 		}
 	}
 	
-	func deleteFromContainer(userAt userId: UUID) -> AnySinglePublisher<Void, Error> {
+	func deleteFromContainer(userAt userId: UUID) -> AnyPublisher<Void, Error> {
 		let id = containerId
 		return gateway.updateAction { realm in
 			let objects = realm.objects(AppRealmUserContainer.self).filter("id = %@", id)
@@ -104,21 +104,21 @@ final class UserStorage {
 		) { [containerId] in $0.filter("id = %@", containerId).first?.usersList }
 	}
 	
-	func saveContainer() -> AnySinglePublisher<Void, Error> {
+	func saveContainer() -> AnyPublisher<Void, Error> {
 		let container = AppUserContainer(id: containerId, users: [])
 		let mapper = AppDomainRealmUserContainerMapper(userMapper: UserMapper())
 		return gateway.count(AppDomainRealmUserContainerMapper.self)
-			.flatMap { [gateway] count -> AnySinglePublisher<Void, Error> in
+			.flatMap { [gateway] count -> AnyPublisher<Void, Error> in
 				if count == 0 {
 					return gateway.save(object: container, mapper: mapper, update: .all)
 				} else {
-					return Just(()).setFailureType(to: Error.self).eraseToAnySinglePublisher()
+					return Just(()).setFailureType(to: Error.self).eraseToAnyPublisher()
 				}
 			}
-			.eraseToAnySinglePublisher()
+			.eraseToAnyPublisher()
 	}
     
-    func getUser(id: String) -> AnySinglePublisher<User?, Error> {
+    func getUser(id: String) -> AnyPublisher<User?, Error> {
         return gateway.get(mapper: RealmUserMapper()) { $0.filter("id = %@", id) }
     }
     
@@ -126,7 +126,7 @@ final class UserStorage {
         return gateway.listen(mapper: RealmUserMapper()) { $0.filter("id = %@", id) }
     }
     
-    func update(id: String) -> AnySinglePublisher<Void, Error> {
+    func update(id: String) -> AnyPublisher<Void, Error> {
         return gateway.updateAction { realm in
             let user = realm.object(ofType: RealmUser.self, forPrimaryKey: id)!
             user.name = "update block name"
@@ -136,7 +136,7 @@ final class UserStorage {
         }
     }
     
-    func delete(id: UUID) -> AnySinglePublisher<Void, Error> {
+    func delete(id: UUID) -> AnyPublisher<Void, Error> {
 		return gateway.delete(UserMapper.self) { $0.filter("id = %@", id.uuidString) }
     }
     

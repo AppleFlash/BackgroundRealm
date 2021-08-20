@@ -30,7 +30,6 @@
 		00B4581426602BE700D15EFD /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B4581326602BE700D15EFD /* User.swift */; };
 		00B458152660347000D15EFD /* Realm.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B4580A266028E600D15EFD /* Realm.framework */; };
 		00B458182660347300D15EFD /* RealmSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B4580B266028E600D15EFD /* RealmSwift.framework */; };
-		00BBF68D2674A13F0033844D /* Single.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BBF68C2674A13F0033844D /* Single.swift */; };
 		00BBF68F26752B070033844D /* PersistenceGatewayListenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BBF68E26752B070033844D /* PersistenceGatewayListenTests.swift */; };
 		00BBF69226752B120033844D /* PrimaryKeyUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BBF69126752B120033844D /* PrimaryKeyUser.swift */; };
 		00BBF69426752B450033844D /* NotPrimaryKeyUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BBF69326752B450033844D /* NotPrimaryKeyUser.swift */; };
@@ -79,7 +78,6 @@
 		00B4580F2660291900D15EFD /* PersistenceGateway.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceGateway.swift; sourceTree = "<group>"; };
 		00B4581126602BD200D15EFD /* Mapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mapper.swift; sourceTree = "<group>"; };
 		00B4581326602BE700D15EFD /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
-		00BBF68C2674A13F0033844D /* Single.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Single.swift; sourceTree = "<group>"; };
 		00BBF68E26752B070033844D /* PersistenceGatewayListenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceGatewayListenTests.swift; sourceTree = "<group>"; };
 		00BBF69126752B120033844D /* PrimaryKeyUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryKeyUser.swift; sourceTree = "<group>"; };
 		00BBF69326752B450033844D /* NotPrimaryKeyUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotPrimaryKeyUser.swift; sourceTree = "<group>"; };
@@ -142,7 +140,6 @@
 		0065839326C53EC9005326B0 /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
-				00BBF68C2674A13F0033844D /* Single.swift */,
 				0065839926C53F99005326B0 /* Publisher+.swift */,
 			);
 			path = Helpers;
@@ -396,7 +393,6 @@
 				00B4581426602BE700D15EFD /* User.swift in Sources */,
 				00A6D5C826C304CC008E0BFC /* ImmediateScheduler.swift in Sources */,
 				0065839826C53F04005326B0 /* ViewModel.swift in Sources */,
-				00BBF68D2674A13F0033844D /* Single.swift in Sources */,
 				00B458102660291900D15EFD /* PersistenceGateway.swift in Sources */,
 				00B4581226602BD200D15EFD /* Mapper.swift in Sources */,
 				00A6D5CA26C304CC008E0BFC /* TestScheduler.swift in Sources */,
