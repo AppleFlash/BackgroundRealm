@@ -52,7 +52,7 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         
         // when
         persistence
-            .save(object: user, mapper: DomainRealmNotPrimaryMapper())
+			.save(object: user, mapper: DomainRealmNotPrimaryMapper().convert(model:))
 			.sink { saveError = $0.error } receiveValue: { _ in }
             .store(in: &subscriptions)
         
@@ -67,7 +67,7 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         
         // when
         persistence
-            .save(objects: users, mapper: DomainRealmNotPrimaryMapper())
+			.save(objects: users, mapper: DomainRealmNotPrimaryMapper().convert(model:))
             .sink { saveError = $0.error } receiveValue: { _ in }
             .store(in: &subscriptions)
         
@@ -84,9 +84,9 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         
         // when
         persistence
-            .save(object: user, mapper: DomainRealmNotPrimaryMapper())
+			.save(object: user, mapper: DomainRealmNotPrimaryMapper().convert(model:))
             .flatMap { [persistence] in
-                persistence!.get(mapper: RealmDomainNotPrimaryMapper())
+				persistence!.get(mapper: RealmDomainNotPrimaryMapper().convert(persistence:))
             }
             .sink(
                 receiveCompletion: { _ in },
@@ -103,7 +103,7 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         var receivedUser: NotPrimaryKeyUser?
         
         // when
-        persistence.get(mapper: RealmDomainNotPrimaryMapper())
+		persistence.get(mapper: RealmDomainNotPrimaryMapper().convert(persistence:))
             .sink(
                 receiveCompletion: { _ in },
                 receiveValue: { receivedUser = $0 }
@@ -122,12 +122,12 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         
         // when
         persistence
-            .save(object: user, mapper: DomainRealmNotPrimaryMapper(), update: .all)
+			.save(object: user, mapper: DomainRealmNotPrimaryMapper().convert(model:), update: .all)
             .flatMap { [persistence] in
-                persistence!.save(object: newUserData, mapper: DomainRealmNotPrimaryMapper())
+				persistence!.save(object: newUserData, mapper: DomainRealmNotPrimaryMapper().convert(model:))
             }
             .flatMap { [persistence] in
-                persistence!.count(DomainRealmNotPrimaryMapper.self) { $0 }
+                persistence!.count(RealmNotPrimaryKeyUser.self) { $0 }
             }
             .sink { _ in } receiveValue: { count = $0 }
             .store(in: &subscriptions)
@@ -143,9 +143,9 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         
         // when
         persistence
-            .save(objects: users, mapper: DomainRealmNotPrimaryMapper())
+			.save(objects: users, mapper: DomainRealmNotPrimaryMapper().convert(model:))
             .flatMap { [persistence] in
-                persistence!.getArray(mapper: RealmDomainNotPrimaryMapper()) { results in
+				persistence!.getArray(mapper: RealmDomainNotPrimaryMapper().convert(persistence:)) { results in
                     results.filter("name IN %@", users.map(\.name))
                 }
             }
@@ -166,12 +166,12 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         
         // when
         persistence
-            .save(objects: users, mapper: DomainRealmNotPrimaryMapper())
+			.save(objects: users, mapper: DomainRealmNotPrimaryMapper().convert(model:))
             .flatMap { [persistence] in
-                persistence!.delete(DomainRealmNotPrimaryMapper.self) { $0.filter("name = %@", users.first!.name) }
+                persistence!.delete(RealmNotPrimaryKeyUser.self) { $0.filter("name = %@", users.first!.name) }
             }
             .flatMap { [persistence] in
-                persistence!.count(DomainRealmNotPrimaryMapper.self) { $0 }
+                persistence!.count(RealmNotPrimaryKeyUser.self) { $0 }
             }
             .sink { _ in } receiveValue: { countAfterDelete = $0 }
             .store(in: &subscriptions)
@@ -188,8 +188,8 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         
         // when
         let userMapper = DomainRealmPrimaryMapper()
-        let mapper = DomainRealmUsersContainerMapper(userMapper: userMapper)
-        persistence.save(object: toSave, mapper: mapper, update: .all)
+		let mapper = DomainRealmUsersContainerMapper(userMapper: userMapper)
+		persistence.save(object: toSave, mapper: mapper.convert(model:), update: .all)
 			.sink(receiveCompletion: { _ in }, receiveValue: { didSave = true })
             .store(in: &subscriptions)
         
@@ -206,9 +206,9 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         // when
         let getMapper = RealmDomainUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersContainerMapper(userMapper: .init())
-        persistence.save(object: toSave, mapper: saveMapper, update: .all)
+		persistence.save(object: toSave, mapper: saveMapper.convert(model:), update: .all)
             .flatMap { [persistence] in
-                persistence!.get(mapper: getMapper)
+				persistence!.get(mapper: getMapper.convert(persistence:))
             }
             .sink { _ in } receiveValue: { received = $0 }
             .store(in: &subscriptions)
@@ -228,7 +228,7 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
         // when
         let getMapper = RealmDomainUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersContainerMapper(userMapper: .init())
-        persistence.save(object: toSave, mapper: saveMapper, update: .all)
+		persistence.save(object: toSave, mapper: saveMapper.convert(model:), update: .all)
             .flatMap { [persistence] in
                 persistence!.updateAction { realm in
                     let list = realm.objects(RealmUserContainer.self).first!
@@ -237,7 +237,7 @@ final class PersistenceNotPrimaryGatewayTests: XCTestCase {
                 }
             }
             .flatMap { [persistence] in
-                persistence!.get(mapper: getMapper)
+				persistence!.get(mapper: getMapper.convert(persistence:))
             }
             .sink { _ in } receiveValue: { received = $0 }
             .store(in: &subscriptions)

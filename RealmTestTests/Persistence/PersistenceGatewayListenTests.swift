@@ -41,17 +41,17 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let expectedChangedAges = [20, 30]
         var changedAges: [Int] = []
         persistence
-            .listen(mapper: RealmDomainPrimaryMapper()) { results in
+			.listen(mapper: RealmDomainPrimaryMapper().convert(persistence:)) { results in
                 results.filter("id = %@", user.id)
             }
             .sink { _ in } receiveValue: { changedAges.append($0.age) }
             .store(in: &subscriptions)
 
         // when
-        persistence.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 20), mapper: DomainRealmPrimaryMapper())
+		persistence.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 20), mapper: DomainRealmPrimaryMapper().convert(model:))
 			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
             .flatMap {
-				self.persistence.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 30), mapper: DomainRealmPrimaryMapper())
+				self.persistence.save(object: PrimaryKeyUser(id: user.id, name: user.name, age: 30), mapper: DomainRealmPrimaryMapper().convert(model:))
             }
 			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
 			.sink()
@@ -69,7 +69,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let expectedUsers = [[oldUser], [oldUser, newUser]]
         var receivedUsers: [[PrimaryKeyUser]] = []
         
-        persistence.listenArray(mapper: RealmDomainPrimaryMapper(), range: nil) {
+		persistence.listenArray(mapper: RealmDomainPrimaryMapper().convert(persistence:), range: nil) {
 			$0.filter("age > %@", 1).sorted(by: \.age, ascending: true)
         }
 		.filter { !$0.isEmpty }
@@ -80,10 +80,10 @@ final class PersistenceGatewayListenTests: XCTestCase {
         .store(in: &subscriptions)
         
         // when
-        persistence.save(objects: users, mapper: DomainRealmPrimaryMapper())
+		persistence.save(objects: users, mapper: DomainRealmPrimaryMapper().convert(model:))
 			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
             .flatMap {
-				self.persistence.save(object: newUser, mapper: DomainRealmPrimaryMapper())
+				self.persistence.save(object: newUser, mapper: DomainRealmPrimaryMapper().convert(model:))
             }
 			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
 			.sink()
@@ -99,15 +99,15 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let expectedUsers = Array(users.dropLast())
         var receivedUsers: [PrimaryKeyUser] = []
 		
-        persistence.save(objects: users, mapper: DomainRealmPrimaryMapper())
+		persistence.save(objects: users, mapper: DomainRealmPrimaryMapper().convert(model:))
 			.flatMap {
-				self.persistence.listenArray(mapper: RealmDomainPrimaryMapper())
+				self.persistence.listenArray(mapper: RealmDomainPrimaryMapper().convert(persistence:))
 			}
 			.sink { _ in } receiveValue: { receivedUsers = $0 }
 			.store(in: &subscriptions)
         
         // when
-		persistence.delete(DomainRealmPrimaryMapper.self) { $0.filter("id = %@", users.last!.id) }
+		persistence.delete(RealmPrimaryKeyUser.self) { $0.filter("id = %@", users.last!.id) }
 			.sink()
 			.store(in: &subscriptions)
 		
@@ -128,15 +128,15 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let expectedUsers = [updatedUser, secondUser]
         var receivedUsers: [PrimaryKeyUser] = []
         
-        persistence.save(objects: users, mapper: DomainRealmPrimaryMapper())
+		persistence.save(objects: users, mapper: DomainRealmPrimaryMapper().convert(model:))
             .flatMap {
-				self.persistence.listenArray(mapper: RealmDomainPrimaryMapper())
+				self.persistence.listenArray(mapper: RealmDomainPrimaryMapper().convert(persistence:))
             }
             .sink { _ in } receiveValue: { receivedUsers = $0.sorted { $0.name < $1.name } }
             .store(in: &subscriptions)
         
         // when
-		persistence.save(object: updatedUser, mapper: DomainRealmPrimaryMapper())
+		persistence.save(object: updatedUser, mapper: DomainRealmPrimaryMapper().convert(model:))
             .sink()
             .store(in: &subscriptions)
 		
@@ -153,14 +153,14 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let expectedUsers = Array(users.filter { $0.age > 10 }.prefix(5))
         var receivedUsers: [PrimaryKeyUser] = []
 
-        persistence.listenArray(mapper: RealmDomainPrimaryMapper(), range: 0..<5) {
+		persistence.listenArray(mapper: RealmDomainPrimaryMapper().convert(persistence:), range: 0..<5) {
 			$0.filter("age > 10").sorted(by: \.age, ascending: true)
         }
         .sink { _ in } receiveValue: { receivedUsers = $0 }
         .store(in: &subscriptions)
         
         // when
-        persistence.save(objects: users, mapper: DomainRealmPrimaryMapper())
+		persistence.save(objects: users, mapper: DomainRealmPrimaryMapper().convert(model:))
 			.sink()
             .store(in: &subscriptions)
 		
@@ -183,9 +183,9 @@ final class PersistenceGatewayListenTests: XCTestCase {
         // when
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
-        persistence.save(object: container, mapper: saveMapper, update: .all)
+		persistence.save(object: container, mapper: saveMapper.convert(model:), update: .all)
             .flatMap {
-				self.persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+				self.persistence.listen(mapper: getMapper.convert(persistence:)) { $0.filter("id = %@", container.id) }
             }
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
@@ -214,10 +214,10 @@ final class PersistenceGatewayListenTests: XCTestCase {
         // when
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
-		let saveSubject = persistence.save(object: container, mapper: saveMapper, update: .all)
+		let saveSubject = persistence.save(object: container, mapper: saveMapper.convert(model:), update: .all)
         saveSubject
             .flatMap {
-				self.persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+				self.persistence.listen(mapper: getMapper.convert(persistence:)) { $0.filter("id = %@", container.id) }
             }
 			.dropFirst()
             .sink(receiveCompletion: { _ in }, receiveValue: {
@@ -259,10 +259,10 @@ final class PersistenceGatewayListenTests: XCTestCase {
         // when
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
-		let saveSubject = persistence.save(object: container, mapper: saveMapper, update: .all)
+		let saveSubject = persistence.save(object: container, mapper: saveMapper.convert(model:), update: .all)
         saveSubject
             .flatMap {
-				self.persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+				self.persistence.listen(mapper: getMapper.convert(persistence:)) { $0.filter("id = %@", container.id) }
             }
 			.dropFirst()
             .sink(receiveCompletion: { _ in }, receiveValue: {
@@ -304,11 +304,11 @@ final class PersistenceGatewayListenTests: XCTestCase {
         // when
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
-		let saveSubject = persistence.save(object: container, mapper: saveMapper, update: .all)
+		let saveSubject = persistence.save(object: container, mapper: saveMapper.convert(model:), update: .all)
 		
         saveSubject
             .flatMap {
-				self.persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+				self.persistence.listen(mapper: getMapper.convert(persistence:)) { $0.filter("id = %@", container.id) }
             }
 			.dropFirst()
             .sink(receiveCompletion: { _ in }, receiveValue: {
@@ -347,7 +347,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
         
-        persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+		persistence.listen(mapper: getMapper.convert(persistence:)) { $0.filter("id = %@", container.id) }
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
                 received = $0
@@ -355,7 +355,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
             .store(in: &subscriptions)
         
         // when
-        persistence.save(object: container, mapper: saveMapper, update: .all)
+		persistence.save(object: container, mapper: saveMapper.convert(model:), update: .all)
             .sink()
             .store(in: &subscriptions)
 		
@@ -379,7 +379,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
         
-        persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+		persistence.listen(mapper: getMapper.convert(persistence:)) { $0.filter("id = %@", container.id) }
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
                 received = $0
@@ -387,7 +387,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
             .store(in: &subscriptions)
         
         // when
-        persistence.save(object: container, mapper: saveMapper, update: .all)
+		persistence.save(object: container, mapper: saveMapper.convert(model:), update: .all)
 			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
             .flatMap {
 				self.persistence.updateAction { realm in
@@ -418,7 +418,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
         
-        persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+		persistence.listen(mapper: getMapper.convert(persistence:)) { $0.filter("id = %@", container.id) }
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
                 received = $0
@@ -427,7 +427,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         
         // when
         
-        persistence.save(object: container, mapper: saveMapper, update: .all)
+		persistence.save(object: container, mapper: saveMapper.convert(model:), update: .all)
 			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
             .flatMap {
 				self.persistence.updateAction { realm in
@@ -460,7 +460,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
         let getMapper = RealmDomainKeyedUserContainerMapper(userMapper: .init())
         let saveMapper = DomainRealmUsersKeyedContainerMapper(userMapper: .init())
         
-        persistence.listen(mapper: getMapper) { $0.filter("id = %@", container.id) }
+		persistence.listen(mapper: getMapper.convert(persistence:)) { $0.filter("id = %@", container.id) }
             .sink(receiveCompletion: { _ in }, receiveValue: {
                 count += 1
                 received = $0
@@ -468,7 +468,7 @@ final class PersistenceGatewayListenTests: XCTestCase {
             .store(in: &subscriptions)
         
         // when
-        persistence.save(object: container, mapper: saveMapper, update: .all)
+		persistence.save(object: container, mapper: saveMapper.convert(model:), update: .all)
 			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
             .flatMap {
 				self.persistence.updateAction { realm in

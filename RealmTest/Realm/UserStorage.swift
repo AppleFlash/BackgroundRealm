@@ -18,6 +18,7 @@ enum UserStorageError: Error {
 final class UserStorage {
     private let gateway: PersistenceGateway
 	private let containerId = "containerId"
+	private let mapper = UserMapper()
     
     init() {
         let queue = DispatchQueue(label: "com.user.persistence")
@@ -26,11 +27,11 @@ final class UserStorage {
     }
     
     func update(user: User) -> AnyPublisher<Void, Error> {
-        return gateway.save(object: user, mapper: UserMapper(), update: .modified)
+		return gateway.save(object: user, mapper: mapper.convert(model:), update: .modified)
     }
 	
 	func save(user: User) -> AnyPublisher<Void, Error> {
-		return gateway.save(object: user, mapper: UserMapper(), update: .all)
+		return gateway.save(object: user, mapper: mapper.convert(model:), update: .all)
 	}
 	
 	func saveToContainer(user: User) -> AnyPublisher<Void, Error> {
@@ -99,18 +100,19 @@ final class UserStorage {
 	
 	func listenChangesetContainer() -> AnyPublisher<PersistenceChangeset<User>, Error> {
 		return gateway.listenOrderedArrayChanges(
-			AppRealmDomainUserContainerMapper.self,
-			mapper: RealmUserMapper()
-		) { [containerId] in $0.filter("id = %@", containerId).first?.usersList }
+			AppRealmUserContainer.self,
+			mapper: RealmUserMapper().convert(persistence:),
+			keyPath: \.usersList
+		) { [containerId] in $0.filter("id = %@", containerId) }
 	}
 	
 	func saveContainer() -> AnyPublisher<Void, Error> {
 		let container = AppUserContainer(id: containerId, users: [])
 		let mapper = AppDomainRealmUserContainerMapper(userMapper: UserMapper())
-		return gateway.count(AppDomainRealmUserContainerMapper.self)
+		return gateway.count(AppRealmUserContainer.self)
 			.flatMap { [gateway] count -> AnyPublisher<Void, Error> in
 				if count == 0 {
-					return gateway.save(object: container, mapper: mapper, update: .all)
+					return gateway.save(object: container, mapper: mapper.convert(model:), update: .all)
 				} else {
 					return Just(()).setFailureType(to: Error.self).eraseToAnyPublisher()
 				}
@@ -119,11 +121,11 @@ final class UserStorage {
 	}
     
     func getUser(id: String) -> AnyPublisher<User?, Error> {
-        return gateway.get(mapper: RealmUserMapper()) { $0.filter("id = %@", id) }
+		return gateway.get(mapper: RealmUserMapper().convert(persistence:)) { $0.filter("id = %@", id) }
     }
     
     func listenUser(id: String) -> AnyPublisher<User, Error> {
-        return gateway.listen(mapper: RealmUserMapper()) { $0.filter("id = %@", id) }
+		return gateway.listen(mapper: RealmUserMapper().convert(persistence:)) { $0.filter("id = %@", id) }
     }
     
     func update(id: String) -> AnyPublisher<Void, Error> {
@@ -137,14 +139,6 @@ final class UserStorage {
     }
     
     func delete(id: UUID) -> AnyPublisher<Void, Error> {
-		return gateway.delete(UserMapper.self) { $0.filter("id = %@", id.uuidString) }
+		return gateway.delete(RealmUser.self) { $0.filter("id = %@", id.uuidString) }
     }
-    
-    func getWithClosure(id: String, completion: @escaping (Result<User, Error>) -> Void) {
-//        closureGateway.get(mapper: RealmUserMapper(), filterBlock: { $0.filter("id = %@", id) }, completion: completion)
-    }
-    
-//    func delete(user: User) -> AnyPublisher<Void, Error> {
-//        return gateway.delete(object: user, mapper: UserMapper())
-//    }
 }

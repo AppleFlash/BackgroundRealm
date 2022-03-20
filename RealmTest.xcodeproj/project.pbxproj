@@ -3,13 +3,17 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		00144D1B2666668D00EE7664 /* UserStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00144D1A2666668D00EE7664 /* UserStorage.swift */; };
 		0026291926B1DDBC00668D1F /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0026291826B1DDBC00668D1F /* main.swift */; };
 		0026291D26B1DDE800668D1F /* TestsAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0026291C26B1DDE800668D1F /* TestsAppDelegate.swift */; };
+		00453ECF27E7631700E3DC6E /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = 00453ECE27E7631700E3DC6E /* Realm */; };
+		00453ED127E7631700E3DC6E /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 00453ED027E7631700E3DC6E /* RealmSwift */; };
+		00453ED327E763FC00E3DC6E /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 00453ED227E763FC00E3DC6E /* RealmSwift */; };
+		00453ED527E7640200E3DC6E /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = 00453ED427E7640200E3DC6E /* Realm */; };
 		0065838426C53B97005326B0 /* AppUserContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065838326C53B97005326B0 /* AppUserContainer.swift */; };
 		0065839026C53D28005326B0 /* UserContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065838F26C53D28005326B0 /* UserContainer.swift */; };
 		0065839226C53D55005326B0 /* KeyedUserContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065839126C53D55005326B0 /* KeyedUserContainer.swift */; };
@@ -28,15 +32,20 @@
 		00B458102660291900D15EFD /* PersistenceGateway.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B4580F2660291900D15EFD /* PersistenceGateway.swift */; };
 		00B4581226602BD200D15EFD /* Mapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B4581126602BD200D15EFD /* Mapper.swift */; };
 		00B4581426602BE700D15EFD /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B4581326602BE700D15EFD /* User.swift */; };
-		00B458152660347000D15EFD /* Realm.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B4580A266028E600D15EFD /* Realm.framework */; };
-		00B458182660347300D15EFD /* RealmSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B4580B266028E600D15EFD /* RealmSwift.framework */; };
 		00BBF68F26752B070033844D /* PersistenceGatewayListenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BBF68E26752B070033844D /* PersistenceGatewayListenTests.swift */; };
 		00BBF69226752B120033844D /* PrimaryKeyUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BBF69126752B120033844D /* PrimaryKeyUser.swift */; };
 		00BBF69426752B450033844D /* NotPrimaryKeyUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BBF69326752B450033844D /* NotPrimaryKeyUser.swift */; };
 		00BBF6962677D7820033844D /* PersistenceGatewayListenChangesetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BBF6952677D7820033844D /* PersistenceGatewayListenChangesetTests.swift */; };
 		00C169D8266FFF61005EF0E1 /* PersistenceNotPrimaryGatewayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C169D7266FFF61005EF0E1 /* PersistenceNotPrimaryGatewayTests.swift */; };
-		00C169D926700097005EF0E1 /* Realm.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B4580A266028E600D15EFD /* Realm.framework */; };
-		00C169DA26700097005EF0E1 /* RealmSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B4580B266028E600D15EFD /* RealmSwift.framework */; };
+		00C3EA2627E7961C00F8E1E9 /* ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C3EA2527E7961C00F8E1E9 /* ListViewController.swift */; };
+		00C3EA2B27E799D100F8E1E9 /* ExampleMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C3EA2A27E799D100F8E1E9 /* ExampleMapper.swift */; };
+		00C3EA2D27E799EC00F8E1E9 /* Protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C3EA2C27E799EC00F8E1E9 /* Protocols.swift */; };
+		00C3EA2F27E79A0B00F8E1E9 /* ExampleController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C3EA2E27E79A0B00F8E1E9 /* ExampleController.swift */; };
+		00C3EA3127E79A3700F8E1E9 /* New.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C3EA3027E79A3700F8E1E9 /* New.swift */; };
+		00C3EA3327E79A8F00F8E1E9 /* Old.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C3EA3227E79A8F00F8E1E9 /* Old.swift */; };
+		00C3EA3527E7A3D100F8E1E9 /* MainCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C3EA3427E7A3D100F8E1E9 /* MainCoordinator.swift */; };
+		00C3EA3727E7A3EC00F8E1E9 /* ArticleCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C3EA3627E7A3EC00F8E1E9 /* ArticleCoordinator.swift */; };
+		00C3EA3927E7A40D00F8E1E9 /* ListData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C3EA3827E7A40D00F8E1E9 /* ListData.swift */; };
 		00E241E426D02B5F0027FCF9 /* ListInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00E241E326D02B5F0027FCF9 /* ListInteractor.swift */; };
 		00F62025267880B600107F16 /* ChangesetItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F62024267880B600107F16 /* ChangesetItem.swift */; };
 		00F62027267880F500107F16 /* PersistenceChangeset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F62026267880F500107F16 /* PersistenceChangeset.swift */; };
@@ -86,6 +95,15 @@
 		00C169CC266FFF48005EF0E1 /* RealmTestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RealmTestTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00C169D0266FFF48005EF0E1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00C169D7266FFF61005EF0E1 /* PersistenceNotPrimaryGatewayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceNotPrimaryGatewayTests.swift; sourceTree = "<group>"; };
+		00C3EA2527E7961C00F8E1E9 /* ListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListViewController.swift; sourceTree = "<group>"; };
+		00C3EA2A27E799D100F8E1E9 /* ExampleMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleMapper.swift; sourceTree = "<group>"; };
+		00C3EA2C27E799EC00F8E1E9 /* Protocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Protocols.swift; sourceTree = "<group>"; };
+		00C3EA2E27E79A0B00F8E1E9 /* ExampleController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleController.swift; sourceTree = "<group>"; };
+		00C3EA3027E79A3700F8E1E9 /* New.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = New.swift; sourceTree = "<group>"; };
+		00C3EA3227E79A8F00F8E1E9 /* Old.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Old.swift; sourceTree = "<group>"; };
+		00C3EA3427E7A3D100F8E1E9 /* MainCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainCoordinator.swift; sourceTree = "<group>"; };
+		00C3EA3627E7A3EC00F8E1E9 /* ArticleCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleCoordinator.swift; sourceTree = "<group>"; };
+		00C3EA3827E7A40D00F8E1E9 /* ListData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListData.swift; sourceTree = "<group>"; };
 		00E241E326D02B5F0027FCF9 /* ListInteractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListInteractor.swift; sourceTree = "<group>"; };
 		00F62024267880B600107F16 /* ChangesetItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangesetItem.swift; sourceTree = "<group>"; };
 		00F62026267880F500107F16 /* PersistenceChangeset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceChangeset.swift; sourceTree = "<group>"; };
@@ -97,8 +115,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				00B458182660347300D15EFD /* RealmSwift.framework in Frameworks */,
-				00B458152660347000D15EFD /* Realm.framework in Frameworks */,
+				00453ED127E7631700E3DC6E /* RealmSwift in Frameworks */,
+				00453ECF27E7631700E3DC6E /* Realm in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -106,8 +124,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				00C169D926700097005EF0E1 /* Realm.framework in Frameworks */,
-				00C169DA26700097005EF0E1 /* RealmSwift.framework in Frameworks */,
+				00453ED527E7640200E3DC6E /* Realm in Frameworks */,
+				00453ED327E763FC00E3DC6E /* RealmSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -150,9 +168,7 @@
 		0065839426C53EE0005326B0 /* Flow */ = {
 			isa = PBXGroup;
 			children = (
-				0065839526C53EEC005326B0 /* ListView.swift */,
-				0065839726C53F04005326B0 /* ViewModel.swift */,
-				00E241E326D02B5F0027FCF9 /* ListInteractor.swift */,
+				00C3EA3A27E7A43D00F8E1E9 /* Main */,
 			);
 			path = Flow;
 			sourceTree = "<group>";
@@ -260,6 +276,65 @@
 			path = Persistence;
 			sourceTree = "<group>";
 		};
+		00C3EA2327E795E900F8E1E9 /* ArticleExample */ = {
+			isa = PBXGroup;
+			children = (
+				00C3EA3627E7A3EC00F8E1E9 /* ArticleCoordinator.swift */,
+				00C3EA2927E799CB00F8E1E9 /* Common */,
+				00C3EA2827E7999800F8E1E9 /* New */,
+				00C3EA2727E7999400F8E1E9 /* Old */,
+			);
+			path = ArticleExample;
+			sourceTree = "<group>";
+		};
+		00C3EA2427E795FB00F8E1E9 /* SUIExample */ = {
+			isa = PBXGroup;
+			children = (
+				0065839526C53EEC005326B0 /* ListView.swift */,
+				0065839726C53F04005326B0 /* ViewModel.swift */,
+				00E241E326D02B5F0027FCF9 /* ListInteractor.swift */,
+			);
+			path = SUIExample;
+			sourceTree = "<group>";
+		};
+		00C3EA2727E7999400F8E1E9 /* Old */ = {
+			isa = PBXGroup;
+			children = (
+				00C3EA3227E79A8F00F8E1E9 /* Old.swift */,
+			);
+			path = Old;
+			sourceTree = "<group>";
+		};
+		00C3EA2827E7999800F8E1E9 /* New */ = {
+			isa = PBXGroup;
+			children = (
+				00C3EA3027E79A3700F8E1E9 /* New.swift */,
+			);
+			path = New;
+			sourceTree = "<group>";
+		};
+		00C3EA2927E799CB00F8E1E9 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				00C3EA2A27E799D100F8E1E9 /* ExampleMapper.swift */,
+				00C3EA2C27E799EC00F8E1E9 /* Protocols.swift */,
+				00C3EA2E27E79A0B00F8E1E9 /* ExampleController.swift */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
+		00C3EA3A27E7A43D00F8E1E9 /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				00C3EA2427E795FB00F8E1E9 /* SUIExample */,
+				00C3EA2327E795E900F8E1E9 /* ArticleExample */,
+				00C3EA2527E7961C00F8E1E9 /* ListViewController.swift */,
+				00C3EA3427E7A3D100F8E1E9 /* MainCoordinator.swift */,
+				00C3EA3827E7A40D00F8E1E9 /* ListData.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -268,7 +343,6 @@
 			buildConfigurationList = 00AAC4A92660257F009F43A1 /* Build configuration list for PBXNativeTarget "RealmTest" */;
 			buildPhases = (
 				00AAC4912660257C009F43A1 /* Sources */,
-				00B4581A2660352B00D15EFD /* Carthage */,
 				00AAC4922660257C009F43A1 /* Frameworks */,
 				00AAC4932660257C009F43A1 /* Resources */,
 			);
@@ -277,6 +351,10 @@
 			dependencies = (
 			);
 			name = RealmTest;
+			packageProductDependencies = (
+				00453ECE27E7631700E3DC6E /* Realm */,
+				00453ED027E7631700E3DC6E /* RealmSwift */,
+			);
 			productName = RealmTest;
 			productReference = 00AAC4952660257C009F43A1 /* RealmTest.app */;
 			productType = "com.apple.product-type.application";
@@ -295,6 +373,10 @@
 				00C169D2266FFF48005EF0E1 /* PBXTargetDependency */,
 			);
 			name = RealmTestTests;
+			packageProductDependencies = (
+				00453ED227E763FC00E3DC6E /* RealmSwift */,
+				00453ED427E7640200E3DC6E /* Realm */,
+			);
 			productName = RealmTestTests;
 			productReference = 00C169CC266FFF48005EF0E1 /* RealmTestTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -326,6 +408,9 @@
 				Base,
 			);
 			mainGroup = 00AAC48C2660257C009F43A1;
+			packageReferences = (
+				00453ECD27E7631700E3DC6E /* XCRemoteSwiftPackageReference "realm-swift" */,
+			);
 			productRefGroup = 00AAC4962660257C009F43A1 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -355,50 +440,34 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
-/* Begin PBXShellScriptBuildPhase section */
-		00B4581A2660352B00D15EFD /* Carthage */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/Carthage/Build/iOS/Realm.framework",
-				"$(SRCROOT)/Carthage/Build/iOS/RealmSwift.framework",
-			);
-			name = Carthage;
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/Realm.framework",
-				"$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/RealmSwift.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "carthage copy-frameworks\n";
-		};
-/* End PBXShellScriptBuildPhase section */
-
 /* Begin PBXSourcesBuildPhase section */
 		00AAC4912660257C009F43A1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				00C3EA2F27E79A0B00F8E1E9 /* ExampleController.swift in Sources */,
 				00F6202A267881A700107F16 /* PersistenceGatewayProtocol.swift in Sources */,
 				0065839A26C53F99005326B0 /* Publisher+.swift in Sources */,
 				0026291926B1DDBC00668D1F /* main.swift in Sources */,
 				0065839626C53EEC005326B0 /* ListView.swift in Sources */,
+				00C3EA2B27E799D100F8E1E9 /* ExampleMapper.swift in Sources */,
+				00C3EA3127E79A3700F8E1E9 /* New.swift in Sources */,
 				00A6D5CB26C304CC008E0BFC /* AnyScheduler.swift in Sources */,
 				0065838426C53B97005326B0 /* AppUserContainer.swift in Sources */,
 				00AAC4992660257C009F43A1 /* AppDelegate.swift in Sources */,
 				00144D1B2666668D00EE7664 /* UserStorage.swift in Sources */,
+				00C3EA3927E7A40D00F8E1E9 /* ListData.swift in Sources */,
+				00C3EA3327E79A8F00F8E1E9 /* Old.swift in Sources */,
+				00C3EA2D27E799EC00F8E1E9 /* Protocols.swift in Sources */,
+				00C3EA3527E7A3D100F8E1E9 /* MainCoordinator.swift in Sources */,
 				00B4581426602BE700D15EFD /* User.swift in Sources */,
 				00A6D5C826C304CC008E0BFC /* ImmediateScheduler.swift in Sources */,
 				0065839826C53F04005326B0 /* ViewModel.swift in Sources */,
+				00C3EA3727E7A3EC00F8E1E9 /* ArticleCoordinator.swift in Sources */,
 				00B458102660291900D15EFD /* PersistenceGateway.swift in Sources */,
 				00E241E426D02B5F0027FCF9 /* ListInteractor.swift in Sources */,
 				00B4581226602BD200D15EFD /* Mapper.swift in Sources */,
+				00C3EA2627E7961C00F8E1E9 /* ListViewController.swift in Sources */,
 				00A6D5CA26C304CC008E0BFC /* TestScheduler.swift in Sources */,
 				00F62025267880B600107F16 /* ChangesetItem.swift in Sources */,
 				00F62027267880F500107F16 /* PersistenceChangeset.swift in Sources */,
@@ -568,10 +637,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 2FFN32AD3Z;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = RealmTest/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -591,10 +657,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 2FFN32AD3Z;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = RealmTest/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -613,15 +676,11 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 2FFN32AD3Z;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = RealmTestTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = qwe.RealmTestTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -637,15 +696,11 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 2FFN32AD3Z;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = RealmTestTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = qwe.RealmTestTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -686,6 +741,40 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		00453ECD27E7631700E3DC6E /* XCRemoteSwiftPackageReference "realm-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/realm/realm-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 10.24.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		00453ECE27E7631700E3DC6E /* Realm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 00453ECD27E7631700E3DC6E /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = Realm;
+		};
+		00453ED027E7631700E3DC6E /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 00453ECD27E7631700E3DC6E /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = RealmSwift;
+		};
+		00453ED227E763FC00E3DC6E /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 00453ECD27E7631700E3DC6E /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = RealmSwift;
+		};
+		00453ED427E7640200E3DC6E /* Realm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 00453ECD27E7631700E3DC6E /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = Realm;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 00AAC48D2660257C009F43A1 /* Project object */;
 }

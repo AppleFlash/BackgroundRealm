@@ -9,17 +9,19 @@ import Combine
 
 extension Publisher where Output: Collection {
 	func diff(comparator: @escaping (Output.Element, Output.Element) -> Bool) -> AnyPublisher<PersistenceChangeset<Output.Element>, Failure> {
-		return scan(([Output.Element](), [Output.Element]())) { old, new  in
-			return (old.1, new.map { $0 })
+		return scan(([Output.Element]?.none, [Output.Element]?.none)) { tuple, array in
+			(tuple.1, array.map { $0 })
 		}
-		.compactMap { $0 }
 		.map { old, new in
-			if !old.isEmpty {
-				let difference = new.difference(from: old, by: comparator)
-				return handle(difference: difference)
-			} else {
-				return .initial(new)
+			guard let oldArray = old else {
+				return .initial(new ?? [])
 			}
+			guard let newArray = new else {
+				return .initial([])
+			}
+
+			let difference = newArray.difference(from: oldArray, by: comparator)
+			return handle(difference: difference)
 		}
 		.eraseToAnyPublisher()
 	}

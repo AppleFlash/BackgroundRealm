@@ -68,10 +68,10 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         var isReceiveOnMain: Bool?
         
         // given
-        persistence.save(object: object, mapper: DonainRealmDumbObjectMapper())
+		persistence.save(object: object, mapper: DonainRealmDumbObjectMapper().convert(model:))
             .receive(on: RunLoop.main)
             .flatMap { [persistence] in
-                return persistence!.get(mapper: RealmDomainDumbObjectMapper())
+				return persistence!.get(mapper: RealmDomainDumbObjectMapper().convert(persistence:))
             }
             .sink(receiveCompletion: { _ in
                 isReceiveOnMain = Thread.isMainThread
@@ -94,9 +94,9 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         var isReceiveOnMain: Bool?
         
         // given
-        persistence.save(object: object, mapper: DonainRealmDumbObjectMapper())
+		persistence.save(object: object, mapper: DonainRealmDumbObjectMapper().convert(model:))
             .flatMap { [persistence] in
-                persistence!.get(mapper: RealmDomainDumbObjectMapper())
+				persistence!.get(mapper: RealmDomainDumbObjectMapper().convert(persistence:))
             }
             .sink(receiveCompletion: { _ in
                 isReceiveOnMain = Thread.isMainThread
@@ -122,11 +122,11 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         Just(())
             .receive(on: DispatchQueue.global())
             .flatMap { [persistence] in
-                persistence!.save(object: object, mapper: DonainRealmDumbObjectMapper())
+				persistence!.save(object: object, mapper: DonainRealmDumbObjectMapper().convert(model:))
             }
             .receive(on: RunLoop.main)
             .flatMap { [persistence] in
-                persistence!.get(mapper: RealmDomainDumbObjectMapper())
+				persistence!.get(mapper: RealmDomainDumbObjectMapper().convert(persistence:))
             }
             .sink(receiveCompletion: { _ in
                 isReceiveOnMain = Thread.isMainThread
@@ -152,11 +152,11 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         Just(())
             .receive(on: DispatchQueue.global())
             .flatMap { [persistence] in
-                persistence!.save(object: object, mapper: DonainRealmDumbObjectMapper())
+				persistence!.save(object: object, mapper: DonainRealmDumbObjectMapper().convert(model:))
             }
             .receive(on: DispatchQueue.global())
             .flatMap { [persistence] in
-                persistence!.get(mapper: RealmDomainDumbObjectMapper())
+				persistence!.get(mapper: RealmDomainDumbObjectMapper().convert(persistence:))
             }
             .sink(receiveCompletion: { _ in
                 isReceiveOnMain = Thread.isMainThread
@@ -179,9 +179,9 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         var isReceiveOnMain: Bool?
         
         // given
-        persistence.save(object: object, mapper: DonainRealmDumbObjectMapper())
+		persistence.save(object: object, mapper: DonainRealmDumbObjectMapper().convert(model:))
             .flatMap { [persistence] in
-                persistence!.listen(mapper: RealmDomainDumbObjectMapper()) { $0.filter("field = %@", object.field) }
+				persistence!.listen(mapper: RealmDomainDumbObjectMapper().convert(persistence:)) { $0.filter("field = %@", object.field) }
             }
             .sink(receiveCompletion: { _ in }, receiveValue: { _ in
                 isReceiveOnMain = Thread.isMainThread
@@ -204,9 +204,9 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
         var isReceiveOnMain: Bool?
         
         // given
-        persistence.save(object: object, mapper: DonainRealmDumbObjectMapper())
+		persistence.save(object: object, mapper: DonainRealmDumbObjectMapper().convert(model:))
             .flatMap { [persistence] in
-                persistence!.listenArray(mapper: RealmDomainDumbObjectMapper())
+				persistence!.listenArray(mapper: RealmDomainDumbObjectMapper().convert(persistence:))
             }
             .sink(receiveCompletion: { _ in }, receiveValue: { _ in
                 isReceiveOnMain = Thread.isMainThread
@@ -230,12 +230,13 @@ final class PersistenceGatewayCoomonTests: XCTestCase {
 
         // given
         let realmMapper = RealmDomainPrimaryMapper()
-        persistence.save(object: object, mapper: DomainRealmUsersKeyedContainerMapper(userMapper: DomainRealmPrimaryMapper()) )
+		persistence.save(object: object, mapper: DomainRealmUsersKeyedContainerMapper(userMapper: DomainRealmPrimaryMapper()).convert(model:) )
             .flatMap { [persistence] in
                 persistence!.listenOrderedArrayChanges(
-                    RealmDomainKeyedUserContainerMapper.self,
-                    mapper: realmMapper,
-					filterBlock: { $0.filter("id = %@", "1").first?.usersList },
+					RealmKeyedUserContainer.self,
+					mapper: realmMapper.convert(persistence:),
+					keyPath: \.usersList,
+					filterBlock: { $0.filter("id = %@", "1") },
 					comparator: { $0 == $1 }
 				)
             }

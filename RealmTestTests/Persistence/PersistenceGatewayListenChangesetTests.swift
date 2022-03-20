@@ -43,12 +43,13 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
 		let expectation = expectation(description: "realm expectation")
 
         // when
-        persistence.save(object: container, mapper: domainMapper)
+		persistence.save(object: container, mapper: domainMapper.convert(model:))
             .flatMap {
 				self.persistence.listenOrderedArrayChanges(
-					RealmDomainKeyedUserContainerMapper.self,
-					mapper: realmMapper,
-					filterBlock: { $0.first?.usersList }
+					RealmKeyedUserContainer.self,
+					mapper: realmMapper.convert(persistence:),
+					keyPath: \.usersList,
+					filterBlock: { $0 }
 				)
             }
 			.sink { _ in } receiveValue: {
@@ -85,9 +86,10 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
         var resultUsersList: [PrimaryKeyUser] = []
 
 		persistence.listenOrderedArrayChanges(
-			RealmDomainKeyedUserContainerMapper.self,
-			mapper: realmMapper,
-			filterBlock: { $0.filter("id = %@", "1").first?.usersList }
+			RealmKeyedUserContainer.self,
+			mapper: realmMapper.convert(persistence:),
+			keyPath: \.usersList,
+			filterBlock: { $0.filter("id = %@", "1") }
 		)
         .sink(receiveCompletion: { _ in }, receiveValue: { changeset in
 			changeset.apply(to: &resultUsersList)
@@ -97,7 +99,7 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
 		listenScheduler.advance()
 		
         // when
-		persistence.save(object: container, mapper: domainMapper)
+		persistence.save(object: container, mapper: domainMapper.convert(model:))
 			.handleEvents(receiveOutput: { self.listenScheduler.advance() })
             .flatMap {
 				self.persistence.updateAction { realm in
@@ -156,12 +158,13 @@ final class PersistenceGatewayListenChangesetTests: XCTestCase {
 		var resultUsersList: [PrimaryKeyUser] = []
 		var callCount = 0
 		
-		persistence.save(object: container, mapper: domainMapper)
+		persistence.save(object: container, mapper: domainMapper.convert(model:))
 			.flatMap {
 				self.persistence.listenOrderedArrayChanges(
-					RealmDomainKeyedUserContainerMapper.self,
-					mapper: realmMapper,
-					filterBlock: { $0.filter("id = %@", "1").first?.usersList }
+					RealmKeyedUserContainer.self,
+					mapper: realmMapper.convert(persistence:),
+					keyPath: \.usersList,
+					filterBlock: { $0.filter("id = %@", "1") }
 				)
 			}
 			.handleEvents(receiveOutput: { _ in self.listenScheduler.advance() })

@@ -21,6 +21,22 @@ struct User: Equatable, Identifiable {
 	var modifyCount: Int?
 }
 
+enum API {
+	struct User: Equatable, Identifiable {
+		let id: UUID
+		let role: String
+		let name: String
+	}
+}
+
+enum Domain {
+	struct User: Equatable, Identifiable {
+		let id: UUID
+		let role: Role
+		var name: String
+	}
+}
+
 class RealmUser: Object {
     @Persisted(primaryKey: true) var id: String = ""
 	@Persisted var role: Role
